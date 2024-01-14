@@ -85,10 +85,3 @@ Library goes from 0 to 65 ( 6 bits)
 | Korean  |  25 |
 | Gifs  |  27 |
 
-|   |   |
-|   |   |
-|   |   |
-|   |   |
-|   |   |
-|   |   |
-

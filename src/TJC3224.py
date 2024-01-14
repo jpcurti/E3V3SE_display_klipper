@@ -48,7 +48,6 @@ class TJC3224_LCD:
     cmd_draw_rectangle = 0x59
     cmd_fill_rectangle = 0x5B
     cmd_reverse_color_area = 0x5C
-    cmd_backlight_off = 0x5E
     cmd_backlight_brightness = 0x5F
     cmd_show_image = 0x70
     cmd_copy_frame_area = 0x71
@@ -175,7 +174,7 @@ class TJC3224_LCD:
         :param luminance: Luminance level (0x00-0x40).
         :type luminance: int
         """
-        self.byte(self.cmd_backlight_off) if brightness == 0 else self.byte(self.cmd_backlight_brightness)
+        self.byte(self.cmd_backlight_brightness)
         self.byte(min(brightness, 0x40))
         self.send()
 
@@ -357,25 +356,25 @@ class TJC3224_LCD:
         self.word(x)
         self.word(y)
         self.byte(0x00) # font
-        self.byte(0x02 | (show_background * 0x40)) # mode (bshow)
+        self.byte(0x05 | (show_background * 0x40)) # mode (bshow)
         self.byte(size) # size
         self.word(font_color)
         self.word(background_color)
         self.string(string)
         self.send()
 
-    def draw_int_value(self, bShow, zeroFill, zeroMode, size, color, background_color, iNum, x, y, value):
+    def draw_int_value(self, show_background, zeroFill, zeroMode, font_size, color, background_color, iNum, x, y, value):
         """
         Draw a positive integer value on the screen.
 
-        :param bShow: True to display the background color, False to not display the background color.
-        :type bShow: bool
+        :param show_background: True to display the background color, False to not display the background color.
+        :type show_background: bool
         :param zeroFill: True to zero fill, False for no zero fill.
         :type zeroFill: bool
         :param zeroMode: 1 for leading 0 displayed as 0, 0 for leading 0 displayed as a space.
         :type zeroMode: int
-        :param size: Font size.
-        :type size: int
+        :param font_size: Font size.
+        :type font_size: int
         :param color: Character color.
         :type color: int
         :param background_color: Background color.
@@ -395,7 +394,7 @@ class TJC3224_LCD:
         # Bit 5: zeroFill
         # Bit 4: zeroMode
         # Bit 3-0: size
-        self.byte((bShow * 0x80) | (0 * 0x40) | (zeroFill * 0x20) | (zeroMode * 0x10) | size)
+        self.byte((show_background * 0x80) | (0 * 0x40) | (zeroFill * 0x20) | (zeroMode * 0x10) | font_size)
         self.word(color)
         self.word(background_color)
         self.byte(iNum)
@@ -405,12 +404,12 @@ class TJC3224_LCD:
         self.double_64(value)
         self.send()
 
-    def draw_float_value(self, bShow, zeroFill, zeroMode, size, color, background_color, iNum, fNum, x, y, value):
+    def draw_float_value(self, show_background, zeroFill, zeroMode, size, color, background_color, iNum, fNum, x, y, value):
         """
         Draw a floating point number on the screen.
 
-        :param bShow: True to display the background color, False to not display the background color.
-        :type bShow: bool
+        :param show_background: True to display the background color, False to not display the background color.
+        :type show_background: bool
         :param zeroFill: True to zero fill, False for no zero fill.
         :type zeroFill: bool
         :param zeroMode: 1 for leading 0 displayed as 0, 0 for leading 0 displayed as a space.
@@ -438,7 +437,7 @@ class TJC3224_LCD:
         # Bit 5: zeroFill
         # Bit 4: zeroMode
         # Bit 3-0: size
-        self.byte((bShow * 0x80) | (0 * 0x40) | (zeroFill * 0x20) | (zeroMode * 0x10) | size)
+        self.byte((show_background * 0x80) | (0 * 0x40) | (zeroFill * 0x20) | (zeroMode * 0x10) | size)
         self.word(color)
         self.word(background_color)
         self.byte(iNum)
@@ -468,16 +467,18 @@ class TJC3224_LCD:
         :type value: float
         """
         if value < 0:
-            self.draw_string(False, True, size, self.color_white, background_color, x - 6, y, "-")
-            self.draw_float_value(True, True, 0, size, self.color_white, background_color, iNum, fNum, x, y, -value)
+            self.draw_string(False,  size, self.color_white, background_color, x - 6, y, "-")
+            self.draw_float_value(False, False, 0, size, self.color_white, background_color, iNum, fNum, x, y, -value)
         else:
-            self.draw_string(False, True, size, self.color_white, background_color, x - 6, y, " ")
-            self.draw_float_value(True, True, 0, size, self.color_white, background_color, iNum, fNum, x, y, value)
+            self.draw_string(False,  size, self.color_white, background_color, x - 6, y, " ")
+            self.draw_float_value(False, False, 0, size, self.color_white, background_color, iNum, fNum, x, y, value)
 
-    def draw_icon(self, libID, picID, x, y):
+    def draw_icon(self, show_background, libID, picID, x, y):
             """
             Draw an icon on the screen.
 
+            :param show_background: True to display the background color, False to not display the background color.
+            :type show_background: bool
             :param libID: Icon library ID.
             :type libID: int
             :param picID: Icon ID.
@@ -495,7 +496,7 @@ class TJC3224_LCD:
             self.word(x)
             self.word(y)
             self.byte(libID)
-            self.byte(0x01) # mode, 01 atm
+            self.byte(show_background * 0x01) 
             self.word(picID)
             self.send()
 
