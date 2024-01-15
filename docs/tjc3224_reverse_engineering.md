@@ -85,3 +85,30 @@ Library goes from 0 to 65 ( 6 bits)
 | Korean  |  25 |
 | Gifs  |  27 |
 
+
+
+# Differences in the instruction set:
+
+Unfortunately the instruction set found is only similar, but no the same as the one from the display. Some of the instructions does not work (QR, move page, and so on) and we need to double check how the original firmware does it, again by plugging our serial man in the middle and checking what happens, like in:
+
+```lua
+--end of screen, here the magic should happen:
+AA 09 82 00 24 08 41 00 0B 00 19 00 EF 00 F0 CC 33 C3 3C -- This is the command that moves a part of the screen
+-- What happens here? let´s break it down:
+AA: header
+09: cut screen command
+82: ? Probably a mode 80 | direction? 0x02 is top, 0x03 is down. Where is left and right?
+0024: Y offset (36)
+0841: no idea, is a background color
+000B: X0 (11)
+0019: Y0 (25)
+00EF: X1 (239)
+00F0: Y1 (240)
+
+```
+
+We can confirm it by changing x0,y0,x1,y1 and checking the screen. The same for the other unknown parameters.
+Changing 0x82 for 0x81 doesnt move the screen, but to 0x83 makes it move down! Is this a custom command?
+
+raspberry pi pinout:
+![Alt text](images/rpi_pinout.png.png)

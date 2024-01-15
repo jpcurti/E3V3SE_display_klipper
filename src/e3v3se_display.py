@@ -71,19 +71,21 @@ class E3V3SE_DISPLAY:
 
     TROWS = 6
     MROWS = TROWS - 1  # Total rows, and other-than-Back
-    TITLE_HEIGHT = 30  # Title bar height
-    MLINE = 53         # Menu line height
-    LBLX = 60          # Menu item label X
+    HEADER_HEIGHT = 24  # Title bar height
+    STATUS_Y = 260 # Y position of status area
+    MLINE = 39         # Menu line height
+    LBLX = 45          # Menu item label X
     MENU_CHR_W = 8
     STAT_CHR_W = 10
+    
 
     dwin_abort_flag = False  # Flag to reset feedrate, return to Home
 
     MSG_STOP_PRINT = "Stop Print"
     MSG_PAUSE_PRINT = "Pausing..."
 
-    DWIN_SCROLL_UP = 2
-    DWIN_SCROLL_DOWN = 3
+    scroll_up = 2
+    scroll_down = 3
 
     select_page = select_t()
     select_file = select_t()
@@ -320,19 +322,20 @@ class E3V3SE_DISPLAY:
     # Color Palette
     color_white         = 0xFFFF
     color_yellow        = 0xFF0F
-    color_Bg_Window     = 0x31E8  # Popup background color
-    color_Bg_Grey       = 0x1145  # Dark grey background color
-    color_Bg_Black      = 0x0841  # Black background color
-    color_Bg_Red        = 0xF00F  # Red background color
-    Popup_Text_color    = 0xD6BA  # Popup font_ background color
-    Line_color          = 0x3A6A  # Split line color
+    color_popup_background     = 0x31E8  # Popup background color
+    color_background_grey       = 0x1145  # Dark grey background color
+    color_background_black      = 0x0841  # Black background color
+    color_background_red        = 0xF00F  # Red background color
+    color_popup_text    = 0xD6BA  # Popup font_ background color
+    color_line          = 0x3A6A  # Split line color
     Rectangle_color     = 0xEE2F  # Blue square cursor color
     Percent_color       = 0xFE29  # Percentage color
     BarFill_color       = 0x10E4  # Fill color of progress bar
     Selected_color      = 0x33BB  # Selected color
 
     MENU_CHAR_LIMIT = 24
-    STATUS_Y = 360
+    
+
 
     MOTION_CASE_RATE = 1
     MOTION_CASE_ACCEL = 2
@@ -391,54 +394,53 @@ class E3V3SE_DISPLAY:
         self.lcd = TJC3224_LCD(USARTx, BAUD_RATE)
         self.checkkey = self.MainMenu
         self.pd = PrinterData(octoPrint_API_Key, Klipper_Socket)
-        self.timer = multitimer.MultiTimer(interval=2, function=self.EachMomentUpdate)
         print("Testing Web-services")
         self.pd.init_Webservices()
         while self.pd.status is None:
             print("No Web-services")
             self.pd.init_Webservices()
-            self.HMI_ShowBoot("Web-service still loading")
+        self.timer = multitimer.MultiTimer(interval=2, function=self.EachMomentUpdate)
         self.HMI_Init()
         self.HMI_ShowBoot(3)
-        self.HMI_StartFrame(False)
+        self.HMI_StartFrame(True)
 
     def lcdExit(self):
         print("Shutting down the LCD")
-        self.lcd.clear_screen(self.color_Bg_Black)
         self.lcd.set_backlight_brightness(0)
         self.timer.stop()
 
-    def Frame_TitleCopy(self, id, x1, y1, x2, y2):
-        self.lcd.copy_frame_area(id, x1, y1, x2, y2, 14, 8)
+    # TODO: Titles on the ender 3 v3 are saved as icons, cant use this, need to replace by show icons
+    # def Frame_TitleCopy(self, id, x1, y1, x2, y2):
+    #     self.lcd.move_screen_area(id, x1, y1, x2, y2, 14, 8)
 
     def MBASE(self, L):
-        return 49 + self.MLINE * L
+        return 45 + self.MLINE * L
 
-    def HMI_ShowBoot(self, sleep_time):
-        self.lcd.clear_screen(self.color_Bg_Black)
+    def HMI_ShowBoot(self, sleep_time=0):
+        self.lcd.clear_screen(self.color_background_black)
         
         self.lcd.draw_string(
             False,  self.lcd.font_8x16,
-            self.color_white, self.color_Bg_Black,
+            self.color_white, self.color_background_black,
             55, 20,
             'E3V3SE display '
         )
         self.lcd.draw_string(
             False,  self.lcd.font_8x16,
-            self.color_white, self.color_Bg_Black,
+            self.color_white, self.color_background_black,
             70, 50,
             'for klipper'
         )
         #Todo: QR
         self.lcd.draw_string(
             False,  self.lcd.font_8x16,
-            self.color_white, self.color_Bg_Black,
+            self.color_white, self.color_background_black,
             80, 250,
             'Github: '
         )
         self.lcd.draw_string(
             False,  self.lcd.font_8x8,
-            self.color_white, self.color_Bg_Black,
+            self.color_white, self.color_background_black,
             0, 280,
             'jpcurti/E3V3SE_display_klipper'
         )
@@ -450,6 +452,7 @@ class E3V3SE_DISPLAY:
         atexit.register(self.lcdExit)
 
     def HMI_StartFrame(self, with_update):
+        self.Clear_Screen()
         self.last_status = self.pd.status
         if self.pd.status == 'printing':
             self.Goto_PrintProcess()
@@ -457,9 +460,7 @@ class E3V3SE_DISPLAY:
         elif self.pd.status in ['operational', 'complete', 'standby', 'cancelled']:
             self.Goto_MainMenu()
         else:
-            self.Goto_MainMenu()
-
-        
+            self.Goto_MainMenu()     
 
     def HMI_MainMenu(self):
         encoder_diffState = self.get_encoder_state()
@@ -537,7 +538,7 @@ class E3V3SE_DISPLAY:
                 itemnum = self.select_file.now - 1  # -1 for "Back"
                 if (self.select_file.now > self.MROWS and self.select_file.now > self.index_file):  # Cursor past the bottom
                     self.index_file = self.select_file.now  # New bottom line
-                    self.Scroll_Menu(self.DWIN_SCROLL_UP)
+                    self.Scroll_Menu(self.scroll_up)
                     self.Draw_SDItem(itemnum, self.MROWS)  # Draw and init the shift name
                 else:
                     self.Move_Highlight(1, self.select_file.now + self.MROWS - self.index_file)  # Just move highlight
@@ -546,7 +547,7 @@ class E3V3SE_DISPLAY:
                 itemnum = self.select_file.now - 1  # -1 for "Back"
                 if (self.select_file.now < self.index_file - self.MROWS):  # Cursor past the top
                     self.index_file -= 1  # New bottom line
-                    self.Scroll_Menu(self.DWIN_SCROLL_DOWN)
+                    self.Scroll_Menu(self.scroll_down)
                     if (self.index_file == self.MROWS):
                         self.Draw_Back_First()
                     else:
@@ -584,7 +585,7 @@ class E3V3SE_DISPLAY:
                     self.index_prepare = self.select_prepare.now
 
                     # Scroll up and draw a blank bottom line
-                    self.Scroll_Menu(self.DWIN_SCROLL_UP)
+                    self.Scroll_Menu(self.scroll_up)
                     self.Draw_Menu_Icon(self.MROWS, self.icon_axis + self.select_prepare.now - 1)
 
                     # Draw "More" icon for sub-menus
@@ -604,7 +605,7 @@ class E3V3SE_DISPLAY:
             if (self.select_prepare.dec()):
                 if (self.select_prepare.now < self.index_prepare - self.MROWS):
                     self.index_prepare -= 1
-                    self.Scroll_Menu(self.DWIN_SCROLL_DOWN)
+                    self.Scroll_Menu(self.scroll_down)
 
                     if (self.index_prepare == self.MROWS):
                         self.Draw_Back_First()
@@ -633,20 +634,20 @@ class E3V3SE_DISPLAY:
                 self.select_axis.reset()
                 self.Draw_Move_Menu()
                 self.lcd.draw_float_value(
-                    True, True, 0, self.lcd.font_8x16, self.color_white, self.color_Bg_Black,
+                    True, True, 0, self.lcd.font_8x16, self.color_white, self.color_background_black,
                     3, 1, 216, self.MBASE(1), self.pd.current_position.x * self.MINUNITMULT
                 )
                 self.lcd.draw_float_value(
-                    True, True, 0, self.lcd.font_8x16, self.color_white, self.color_Bg_Black,
+                    True, True, 0, self.lcd.font_8x16, self.color_white, self.color_background_black,
                     3, 1, 216, self.MBASE(2), self.pd.current_position.y * self.MINUNITMULT
                 )
                 self.lcd.draw_float_value(
-                    True, True, 0, self.lcd.font_8x16, self.color_white, self.color_Bg_Black,
+                    True, True, 0, self.lcd.font_8x16, self.color_white, self.color_background_black,
                     3, 1, 216, self.MBASE(3), self.pd.current_position.z * self.MINUNITMULT
                 )
                 self.pd.sendGCode("G92 E0")
                 self.pd.current_position.e = self.pd.HMI_ValueStruct.Move_E_scale = 0
-                self.lcd.draw_signed_float(self.lcd.font_8x16, self.color_Bg_Black, 3, 1, 216, self.MBASE(4), 0)
+                self.lcd.draw_signed_float(self.lcd.font_8x16, self.color_background_black, 3, 1, 216, self.MBASE(4), 0)
             elif self.select_prepare.now == self.PREPARE_CASE_DISA:  # Disable steppers
                 self.pd.sendGCode("M84")
             elif self.select_prepare.now == self.PREPARE_CASE_HOME:  # Homing
@@ -664,7 +665,7 @@ class E3V3SE_DISPLAY:
                 self.pd.HMI_ValueStruct.show_mode = -4
 
                 self.lcd.draw_signed_float(
-                    self.lcd.font_8x16, self.lcd.Selected_Color, 2, 2, 202,
+                    self.lcd.font_8x16, self.Selected_Color, 2, 2, 202,
                     self.MBASE(self.PREPARE_CASE_ZOFF + self.MROWS - self.index_prepare),
                     self.pd.HMI_ValueStruct.offset_value
                 )
@@ -695,20 +696,20 @@ class E3V3SE_DISPLAY:
             if (self.select_control.inc(1 + self.CONTROL_CASE_TOTAL)):
                 if (self.select_control.now > self.MROWS and self.select_control.now > self.index_control):
                     self.index_control = self.select_control.now
-                    self.Scroll_Menu(self.DWIN_SCROLL_UP)
+                    self.Scroll_Menu(self.scroll_up)
                     self.Draw_Menu_Icon(self.MROWS, self.icon_temperature + self.index_control - 1)
                     self.Draw_More_Icon(self.CONTROL_CASE_TEMP + self.MROWS - self.index_control)  # Temperature >
                     self.Draw_More_Icon(self.CONTROL_CASE_MOVE + self.MROWS - self.index_control)  # Motion >
                     if (self.index_control > self.MROWS):
                         self.Draw_More_Icon(self.CONTROL_CASE_INFO + self.MROWS - self.index_control)  # Info >
-                        self.lcd.copy_frame_area(1, 0, 104, 24, 114, self.LBLX, self.MBASE(self.CONTROL_CASE_INFO - 1))
+                        self.lcd.move_screen_area(1, 0, 104, 24, 114, self.LBLX, self.MBASE(self.CONTROL_CASE_INFO - 1))
                 else:
                     self.Move_Highlight(1, self.select_control.now + self.MROWS - self.index_control)
         elif (encoder_diffState == self.ENCODER_DIFF_CCW):
             if (self.select_control.dec()):
                 if (self.select_control.now < self.index_control - self.MROWS):
                     self.index_control -= 1
-                    self.Scroll_Menu(self.DWIN_SCROLL_DOWN)
+                    self.Scroll_Menu(self.scroll_down)
                     if (self.index_control == self.MROWS):
                         self.Draw_Back_First()
                     else:
@@ -847,14 +848,14 @@ class E3V3SE_DISPLAY:
             if (self.select_tune.inc(1 + self.TUNE_CASE_TOTAL)):
                 if (self.select_tune.now > self.MROWS and self.select_tune.now > self.index_tune):
                     self.index_tune = self.select_tune.now
-                    self.Scroll_Menu(self.DWIN_SCROLL_UP)
+                    self.Scroll_Menu(self.scroll_up)
                 else:
                     self.Move_Highlight(1, self.select_tune.now + self.MROWS - self.index_tune)
         elif (encoder_diffState == self.ENCODER_DIFF_CCW):
             if (self.select_tune.dec()):
                 if (self.select_tune.now < self.index_tune - self.MROWS):
                     self.index_tune -= 1
-                    self.Scroll_Menu(self.DWIN_SCROLL_DOWN)
+                    self.Scroll_Menu(self.scroll_down)
                     if (self.index_tune == self.MROWS):
                         self.Draw_Back_First()
                 else:
@@ -867,7 +868,7 @@ class E3V3SE_DISPLAY:
                 self.checkkey = self.PrintSpeed
                 self.pd.HMI_ValueStruct.print_speed = self.pd.feedrate_percentage
                 self.lcd.draw_int_value(
-                    True, True, 0, self.lcd.font_8x16, self.color_white, self.lcd.Selected_Color,
+                    True, True, 0, self.lcd.font_8x16, self.color_white, self.Selected_Color,
                     3, 216, self.MBASE(self.TUNE_CASE_SPEED + self.MROWS - self.index_tune),
                     self.pd.feedrate_percentage
                 )
@@ -875,7 +876,7 @@ class E3V3SE_DISPLAY:
             elif self.select_tune.now == self.TUNE_CASE_ZOFF:   #z offset
                 self.checkkey = self.Homeoffset
                 self.lcd.draw_signed_float(
-                    self.lcd.font_8x16, self.lcd.Selected_Color, 2, 2, 202,
+                    self.lcd.font_8x16, self.Selected_Color, 2, 2, 202,
                     self.MBASE(self.TUNE_CASE_ZOFF + self.MROWS - self.index_tune),
                     self.pd.HMI_ValueStruct.offset_value
                 )
@@ -899,7 +900,7 @@ class E3V3SE_DISPLAY:
             self.pd.set_feedrate(self.pd.HMI_ValueStruct.print_speed)
 
         self.lcd.draw_int_value(
-            True, True, 0, self.lcd.font_8x16, self.color_white, self.color_Bg_Black,
+            True, True, 0, self.lcd.font_8x16, self.color_white, self.color_background_black,
             3, 216, self.MBASE(self.select_tune.now + self.MROWS - self.index_tune),
             self.pd.HMI_ValueStruct.print_speed
         )
@@ -917,22 +918,22 @@ class E3V3SE_DISPLAY:
                     self.pd.current_position.e = self.pd.HMI_ValueStruct.Move_E_scale = 0
                     self.Draw_Move_Menu()
                     self.lcd.draw_float_value(
-                        True, True, 0, self.lcd.font_8x16, self.color_white, self.color_Bg_Black,
+                        True, True, 0, self.lcd.font_8x16, self.color_white, self.color_background_black,
                         3, 1, 216, self.MBASE(1),
                         self.pd.HMI_ValueStruct.Move_X_scale
                     )
                     self.lcd.draw_float_value(
-                        True, True, 0, self.lcd.font_8x16, self.color_white, self.color_Bg_Black,
+                        True, True, 0, self.lcd.font_8x16, self.color_white, self.color_background_black,
                         3, 1, 216, self.MBASE(2),
                         self.pd.HMI_ValueStruct.Move_Y_scale
                     )
                     self.lcd.draw_float_value(
-                        True, True, 0, self.lcd.font_8x16, self.color_white, self.color_Bg_Black,
+                        True, True, 0, self.lcd.font_8x16, self.color_white, self.color_background_black,
                         3, 1, 216, self.MBASE(3),
                         self.pd.HMI_ValueStruct.Move_Z_scale
                     )
                     self.lcd.draw_signed_float(
-                        self.lcd.font_8x16, self.color_Bg_Black, 3, 1, 216, self.MBASE(4), 0
+                        self.lcd.font_8x16, self.color_background_black, 3, 1, 216, self.MBASE(4), 0
                     )
                     # self.lcd.UpdateLCD()
                 return
@@ -954,7 +955,7 @@ class E3V3SE_DISPLAY:
                 self.checkkey = self.Move_X
                 self.pd.HMI_ValueStruct.Move_X_scale = self.pd.current_position.x * self.MINUNITMULT
                 self.lcd.draw_float_value(
-                    True, True, 0, self.lcd.font_8x16, self.color_white, self.lcd.Selected_Color,
+                    True, True, 0, self.lcd.font_8x16, self.color_white, self.Selected_Color,
                     3, 1, 216, self.MBASE(1),
                     self.pd.HMI_ValueStruct.Move_X_scale
                 )
@@ -963,7 +964,7 @@ class E3V3SE_DISPLAY:
                 self.checkkey = self.Move_Y
                 self.pd.HMI_ValueStruct.Move_Y_scale = self.pd.current_position.y * self.MINUNITMULT
                 self.lcd.draw_float_value(
-                    True, True, 0, self.lcd.font_8x16, self.color_white, self.lcd.Selected_Color,
+                    True, True, 0, self.lcd.font_8x16, self.color_white, self.Selected_Color,
                     3, 1, 216, self.MBASE(2),
                     self.pd.HMI_ValueStruct.Move_Y_scale
                 )
@@ -972,7 +973,7 @@ class E3V3SE_DISPLAY:
                 self.checkkey = self.Move_Z
                 self.pd.HMI_ValueStruct.Move_Z_scale = self.pd.current_position.z * self.MINUNITMULT
                 self.lcd.draw_float_value(
-                    True, True, 0, self.lcd.font_8x16, self.color_white, self.lcd.Selected_Color,
+                    True, True, 0, self.lcd.font_8x16, self.color_white, self.Selected_Color,
                     3, 1, 216, self.MBASE(3),
                     self.pd.HMI_ValueStruct.Move_Z_scale
                 )
@@ -988,7 +989,7 @@ class E3V3SE_DISPLAY:
                 self.checkkey = self.Extruder
                 self.pd.HMI_ValueStruct.Move_E_scale = self.pd.current_position.e * self.MINUNITMULT
                 self.lcd.draw_signed_float(
-                    self.lcd.font_8x16, self.lcd.Selected_Color, 3, 1, 216, self.MBASE(4),
+                    self.lcd.font_8x16, self.Selected_Color, 3, 1, 216, self.MBASE(4),
                     self.pd.HMI_ValueStruct.Move_E_scale
                 )
                 self.EncoderRateLimit = False
@@ -1002,7 +1003,7 @@ class E3V3SE_DISPLAY:
             self.checkkey = self.AxisMove
             self.EncoderRateLimit = True
             self.lcd.draw_float_value(
-                True, True, 0, self.lcd.font_8x16, self.color_white, self.color_Bg_Black,
+                True, True, 0, self.lcd.font_8x16, self.color_white, self.color_background_black,
                 3, 1, 216, self.MBASE(1),
                 self.pd.HMI_ValueStruct.Move_X_scale
             )
@@ -1022,7 +1023,7 @@ class E3V3SE_DISPLAY:
 
         self.pd.current_position.x = self.pd.HMI_ValueStruct.Move_X_scale / 10
         self.lcd.draw_float_value(
-            True, True, 0, self.lcd.font_8x16, self.color_white, self.lcd.Selected_Color,
+            True, True, 0, self.lcd.font_8x16, self.color_white, self.Selected_Color,
             3, 1, 216, self.MBASE(1), self.pd.HMI_ValueStruct.Move_X_scale)
         # self.lcd.UpdateLCD()
 
@@ -1034,7 +1035,7 @@ class E3V3SE_DISPLAY:
             self.checkkey = self.AxisMove
             self.EncoderRateLimit = True
             self.lcd.draw_float_value(
-                True, True, 0, self.lcd.font_8x16, self.color_white, self.color_Bg_Black,
+                True, True, 0, self.lcd.font_8x16, self.color_white, self.color_background_black,
                 3, 1, 216, self.MBASE(2),
                 self.pd.HMI_ValueStruct.Move_Y_scale
             )
@@ -1055,7 +1056,7 @@ class E3V3SE_DISPLAY:
 
         self.pd.current_position.y = self.pd.HMI_ValueStruct.Move_Y_scale / 10
         self.lcd.draw_float_value(
-            True, True, 0, self.lcd.font_8x16, self.color_white, self.lcd.Selected_Color,
+            True, True, 0, self.lcd.font_8x16, self.color_white, self.Selected_Color,
             3, 1, 216, self.MBASE(2), self.pd.HMI_ValueStruct.Move_Y_scale)
         # self.lcd.UpdateLCD()
 
@@ -1067,7 +1068,7 @@ class E3V3SE_DISPLAY:
             self.checkkey = self.AxisMove
             self.EncoderRateLimit = True
             self.lcd.draw_float_value(
-                True, True, 0, self.lcd.font_8x16, self.color_white, self.color_Bg_Black,
+                True, True, 0, self.lcd.font_8x16, self.color_white, self.color_background_black,
                 3, 1, 216, self.MBASE(3),
                 self.pd.HMI_ValueStruct.Move_Z_scale
             )
@@ -1087,7 +1088,7 @@ class E3V3SE_DISPLAY:
 
         self.pd.current_position.z = self.pd.HMI_ValueStruct.Move_Z_scale / 10
         self.lcd.draw_float_value(
-            True, True, 0, self.lcd.font_8x16, self.color_white, self.lcd.Selected_Color,
+            True, True, 0, self.lcd.font_8x16, self.color_white, self.Selected_Color,
             3, 1, 216, self.MBASE(3), self.pd.HMI_ValueStruct.Move_Z_scale)
         # self.lcd.UpdateLCD()
 
@@ -1102,7 +1103,7 @@ class E3V3SE_DISPLAY:
             self.EncoderRateLimit = True
             self.pd.last_E_scale = self.pd.HMI_ValueStruct.Move_E_scale
             self.lcd.draw_signed_float(
-                self.lcd.font_8x16, self.color_Bg_Black, 3, 1, 216,
+                self.lcd.font_8x16, self.color_background_black, 3, 1, 216,
                 self.MBASE(4), self.pd.HMI_ValueStruct.Move_E_scale
             )
             self.pd.moveAbsolute('E',self.pd.current_position.e, 300)
@@ -1117,7 +1118,7 @@ class E3V3SE_DISPLAY:
         elif ((self.pd.last_E_scale - self.pd.HMI_ValueStruct.Move_E_scale) > (self.pd.EXTRUDE_MAXLENGTH) * self.MINUNITMULT):
             self.pd.HMI_ValueStruct.Move_E_scale = self.pd.last_E_scale - (self.pd.EXTRUDE_MAXLENGTH) * self.MINUNITMULT
         self.pd.current_position.e = self.pd.HMI_ValueStruct.Move_E_scale / 10
-        self.lcd.draw_signed_float(self.lcd.font_8x16, self.lcd.Selected_Color, 3, 1, 216, self.MBASE(4), self.pd.HMI_ValueStruct.Move_E_scale)
+        self.lcd.draw_signed_float(self.lcd.font_8x16, self.Selected_Color, 3, 1, 216, self.MBASE(4), self.pd.HMI_ValueStruct.Move_E_scale)
         # self.lcd.UpdateLCD()
 
     def HMI_Temperature(self):
@@ -1141,7 +1142,7 @@ class E3V3SE_DISPLAY:
                 self.checkkey = self.ETemp
                 self.pd.HMI_ValueStruct.E_Temp = self.pd.thermalManager['temp_hotend'][0]['target']
                 self.lcd.draw_int_value(
-                    True, True, 0, self.lcd.font_8x16, self.color_white, self.lcd.Selected_Color,
+                    True, True, 0, self.lcd.font_8x16, self.color_white, self.Selected_Color,
                     3, 216, self.MBASE(1),
                     self.pd.thermalManager['temp_hotend'][0]['target']
                 )
@@ -1150,7 +1151,7 @@ class E3V3SE_DISPLAY:
                 self.checkkey = self.BedTemp
                 self.pd.HMI_ValueStruct.Bed_Temp = self.pd.thermalManager['temp_bed']['target']
                 self.lcd.draw_int_value(
-                    True, True, 0, self.lcd.font_8x16, self.color_white, self.lcd.Selected_Color,
+                    True, True, 0, self.lcd.font_8x16, self.color_white, self.Selected_Color,
                     3, 216, self.MBASE(2),
                     self.pd.thermalManager['temp_bed']['target']
                 )
@@ -1159,7 +1160,7 @@ class E3V3SE_DISPLAY:
                 self.checkkey = self.FanSpeed
                 self.pd.HMI_ValueStruct.Fan_speed = self.pd.thermalManager['fan_speed'][0]
                 self.lcd.draw_int_value(
-                    True, True, 0, self.lcd.font_8x16, self.color_white, self.lcd.Selected_Color,
+                    True, True, 0, self.lcd.font_8x16, self.color_white, self.Selected_Color,
                     3, 216, self.MBASE(3), self.pd.thermalManager['fan_speed'][0]
                 )
                 self.EncoderRateLimit = False
@@ -1170,25 +1171,25 @@ class E3V3SE_DISPLAY:
                 self.pd.HMI_ValueStruct.show_mode = -2
 
                 self.Clear_Main_Window()
-                self.Frame_TitleCopy(1, 56, 16, 141, 28)  # "PLA Settings"
-                self.lcd.copy_frame_area(1, 157, 76, 181, 86, self.LBLX, self.MBASE(self.PREHEAT_CASE_TEMP))
-                self.lcd.copy_frame_area(1, 197, 104, 238, 114, self.LBLX + 27, self.MBASE(self.PREHEAT_CASE_TEMP))
-                self.lcd.copy_frame_area(1, 1, 89, 83, 101, self.LBLX + 71, self.MBASE(self.PREHEAT_CASE_TEMP))  # PLA nozzle temp
+                # self.Frame_TitleCopy(1, 56, 16, 141, 28)  # "PLA Settings"
+                self.lcd.move_screen_area(1, 157, 76, 181, 86, self.LBLX, self.MBASE(self.PREHEAT_CASE_TEMP))
+                self.lcd.move_screen_area(1, 197, 104, 238, 114, self.LBLX + 27, self.MBASE(self.PREHEAT_CASE_TEMP))
+                self.lcd.move_screen_area(1, 1, 89, 83, 101, self.LBLX + 71, self.MBASE(self.PREHEAT_CASE_TEMP))  # PLA nozzle temp
                 if self.pd.HAS_HEATED_BED:
-                    self.lcd.copy_frame_area(1, 157, 76, 181, 86, self.LBLX, self.MBASE(self.PREHEAT_CASE_BED) + 3)
-                    self.lcd.copy_frame_area(1, 240, 104, 264, 114, self.LBLX + 27, self.MBASE(self.PREHEAT_CASE_BED) + 3)
-                    self.lcd.copy_frame_area(1, 1, 89, 83, 101, self.LBLX + 54, self.MBASE(self.PREHEAT_CASE_BED) + 3)  # PLA bed temp
+                    self.lcd.move_screen_area(1, 157, 76, 181, 86, self.LBLX, self.MBASE(self.PREHEAT_CASE_BED) + 3)
+                    self.lcd.move_screen_area(1, 240, 104, 264, 114, self.LBLX + 27, self.MBASE(self.PREHEAT_CASE_BED) + 3)
+                    self.lcd.move_screen_area(1, 1, 89, 83, 101, self.LBLX + 54, self.MBASE(self.PREHEAT_CASE_BED) + 3)  # PLA bed temp
                 if self.pd.HAS_FAN:
-                    self.lcd.copy_frame_area(1, 157, 76, 181, 86, self.LBLX, self.MBASE(self.PREHEAT_CASE_FAN))
-                    self.lcd.copy_frame_area(1, 0, 119, 64, 132, self.LBLX + 27, self.MBASE(self.PREHEAT_CASE_FAN))  # PLA fan speed
+                    self.lcd.move_screen_area(1, 157, 76, 181, 86, self.LBLX, self.MBASE(self.PREHEAT_CASE_FAN))
+                    self.lcd.move_screen_area(1, 0, 119, 64, 132, self.LBLX + 27, self.MBASE(self.PREHEAT_CASE_FAN))  # PLA fan speed
 
-                self.lcd.copy_frame_area(1, 97, 165, 229, 177, self.LBLX, self.MBASE(self.PREHEAT_CASE_SAVE))  # Save PLA configuration
+                self.lcd.move_screen_area(1, 97, 165, 229, 177, self.LBLX, self.MBASE(self.PREHEAT_CASE_SAVE))  # Save PLA configuration
 
                 self.Draw_Back_First()
                 i = 1
                 self.Draw_Menu_Line(i, self.icon_SetEndTemp)
                 self.lcd.draw_int_value(
-                    True, True, 0, self.lcd.font_8x16, self.color_white, self.color_Bg_Black,
+                    True, True, 0, self.lcd.font_8x16, self.color_white, self.color_background_black,
                     3, 216, self.MBASE(i),
                     self.pd.material_preset[0].hotend_temp
                 )
@@ -1196,7 +1197,7 @@ class E3V3SE_DISPLAY:
                     i += 1
                     self.Draw_Menu_Line(i, self.icon_SetBedTemp)
                     self.lcd.draw_int_value(
-                        True, True, 0, self.lcd.font_8x16, self.color_white, self.color_Bg_Black,
+                        True, True, 0, self.lcd.font_8x16, self.color_white, self.color_background_black,
                         3, 216, self.MBASE(i),
                         self.pd.material_preset[0].bed_temp
                     )
@@ -1204,7 +1205,7 @@ class E3V3SE_DISPLAY:
                     i += 1
                     self.Draw_Menu_Line(i, self.icon_FanSpeed)
                     self.lcd.draw_int_value(
-                        True, True, 0, self.lcd.font_8x16, self.color_white, self.color_Bg_Black,
+                        True, True, 0, self.lcd.font_8x16, self.color_white, self.color_background_black,
                         3, 216, self.MBASE(i),
                         self.pd.material_preset[0].fan_speed
                     )
@@ -1215,26 +1216,26 @@ class E3V3SE_DISPLAY:
                 self.select_ABS.reset()
                 self.pd.HMI_ValueStruct.show_mode = -3
                 self.Clear_Main_Window()
-                self.Frame_TitleCopy(1, 56, 16, 141, 28)  # "ABS Settings"
-                self.lcd.copy_frame_area(1, 172, 76, 198, 86, self.LBLX, self.MBASE(self.PREHEAT_CASE_TEMP))
-                self.lcd.copy_frame_area(1, 197, 104, 238, 114, self.LBLX + 27, self.MBASE(self.PREHEAT_CASE_TEMP))
-                self.lcd.copy_frame_area(1, 1, 89, 83, 101, self.LBLX + 71, self.MBASE(self.PREHEAT_CASE_TEMP))  # ABS nozzle temp
+                # self.Frame_TitleCopy(1, 56, 16, 141, 28)  # "ABS Settings"
+                self.lcd.move_screen_area(1, 172, 76, 198, 86, self.LBLX, self.MBASE(self.PREHEAT_CASE_TEMP))
+                self.lcd.move_screen_area(1, 197, 104, 238, 114, self.LBLX + 27, self.MBASE(self.PREHEAT_CASE_TEMP))
+                self.lcd.move_screen_area(1, 1, 89, 83, 101, self.LBLX + 71, self.MBASE(self.PREHEAT_CASE_TEMP))  # ABS nozzle temp
                 if self.pd.HAS_HEATED_BED:
-                    self.lcd.copy_frame_area(1, 172, 76, 198, 86, self.LBLX, self.MBASE(self.PREHEAT_CASE_BED) + 3)
-                    self.lcd.copy_frame_area(1, 240, 104, 264, 114, self.LBLX + 27, self.MBASE(self.PREHEAT_CASE_BED) + 3)
-                    self.lcd.copy_frame_area(1, 1, 89, 83, 101, self.LBLX + 54, self.MBASE(self.PREHEAT_CASE_BED) + 3)  # ABS bed temp
+                    self.lcd.move_screen_area(1, 172, 76, 198, 86, self.LBLX, self.MBASE(self.PREHEAT_CASE_BED) + 3)
+                    self.lcd.move_screen_area(1, 240, 104, 264, 114, self.LBLX + 27, self.MBASE(self.PREHEAT_CASE_BED) + 3)
+                    self.lcd.move_screen_area(1, 1, 89, 83, 101, self.LBLX + 54, self.MBASE(self.PREHEAT_CASE_BED) + 3)  # ABS bed temp
                 if self.pd.HAS_FAN:
-                    self.lcd.copy_frame_area(1, 172, 76, 198, 86, self.LBLX, self.MBASE(self.PREHEAT_CASE_FAN))
-                    self.lcd.copy_frame_area(1, 0, 119, 64, 132, self.LBLX + 27, self.MBASE(self.PREHEAT_CASE_FAN))  # ABS fan speed
+                    self.lcd.move_screen_area(1, 172, 76, 198, 86, self.LBLX, self.MBASE(self.PREHEAT_CASE_FAN))
+                    self.lcd.move_screen_area(1, 0, 119, 64, 132, self.LBLX + 27, self.MBASE(self.PREHEAT_CASE_FAN))  # ABS fan speed
 
-                self.lcd.copy_frame_area(1, 97, 165, 229, 177, self.LBLX, self.MBASE(self.PREHEAT_CASE_SAVE))
-                self.lcd.copy_frame_area(1, 172, 76, 198, 86, self.LBLX + 33, self.MBASE(self.PREHEAT_CASE_SAVE))  # Save ABS configuration
+                self.lcd.move_screen_area(1, 97, 165, 229, 177, self.LBLX, self.MBASE(self.PREHEAT_CASE_SAVE))
+                self.lcd.move_screen_area(1, 172, 76, 198, 86, self.LBLX + 33, self.MBASE(self.PREHEAT_CASE_SAVE))  # Save ABS configuration
 
                 self.Draw_Back_First()
                 i = 1
                 self.Draw_Menu_Line(i, self.icon_SetEndTemp)
                 self.lcd.draw_int_value(
-                    True, True, 0, self.lcd.font_8x16, self.color_white, self.color_Bg_Black,
+                    True, True, 0, self.lcd.font_8x16, self.color_white, self.color_background_black,
                     3, 216, self.MBASE(i),
                     self.pd.material_preset[1].hotend_temp
                 )
@@ -1242,7 +1243,7 @@ class E3V3SE_DISPLAY:
                     i += 1
                     self.Draw_Menu_Line(i, self.icon_SetBedTemp)
                     self.lcd.draw_int_value(
-                        True, True, 0, self.lcd.font_8x16, self.color_white, self.color_Bg_Black,
+                        True, True, 0, self.lcd.font_8x16, self.color_white, self.color_background_black,
                         3, 216, self.MBASE(i),
                         self.pd.material_preset[1].bed_temp
                     )
@@ -1250,7 +1251,7 @@ class E3V3SE_DISPLAY:
                     i += 1
                     self.Draw_Menu_Line(i, self.icon_FanSpeed)
                     self.lcd.draw_int_value(
-                        True, True, 0, self.lcd.font_8x16, self.color_white, self.color_Bg_Black,
+                        True, True, 0, self.lcd.font_8x16, self.color_white, self.color_background_black,
                         3, 216, self.MBASE(i),
                         self.pd.material_preset[1].fan_speed
                     )
@@ -1281,7 +1282,7 @@ class E3V3SE_DISPLAY:
                 self.checkkey = self.ETemp
                 self.pd.HMI_ValueStruct.E_Temp = self.pd.material_preset[0].hotend_temp
                 self.lcd.draw_int_value(
-                    True, True, 0, self.lcd.font_8x16, self.color_white, self.lcd.Selected_Color,
+                    True, True, 0, self.lcd.font_8x16, self.color_white, self.Selected_Color,
                     3, 216, self.MBASE(self.PREHEAT_CASE_TEMP),
                     self.pd.material_preset[0].hotend_temp
                 )
@@ -1290,7 +1291,7 @@ class E3V3SE_DISPLAY:
                 self.checkkey = self.BedTemp
                 self.pd.HMI_ValueStruct.Bed_Temp = self.pd.material_preset[0].bed_temp
                 self.lcd.draw_int_value(
-                    True, True, 0, self.lcd.font_8x16, self.color_white, self.lcd.Selected_Color,
+                    True, True, 0, self.lcd.font_8x16, self.color_white, self.Selected_Color,
                     3, 216, self.MBASE(self.PREHEAT_CASE_BED),
                     self.pd.material_preset[0].bed_temp
                 )
@@ -1299,7 +1300,7 @@ class E3V3SE_DISPLAY:
                 self.checkkey = self.FanSpeed
                 self.pd.HMI_ValueStruct.Fan_speed = self.pd.material_preset[0].fan_speed
                 self.lcd.draw_int_value(
-                    True, True, 0, self.lcd.font_8x16, self.color_white, self.lcd.Selected_Color,
+                    True, True, 0, self.lcd.font_8x16, self.color_white, self.Selected_Color,
                     3, 216, self.MBASE(self.PREHEAT_CASE_FAN),
                     self.pd.material_preset[0].fan_speed
                 )
@@ -1333,7 +1334,7 @@ class E3V3SE_DISPLAY:
                 self.pd.HMI_ValueStruct.E_Temp = self.pd.material_preset[1].hotend_temp
                 print(self.pd.HMI_ValueStruct.E_Temp)
                 self.lcd.draw_int_value(
-                    True, True, 0, self.lcd.font_8x16, self.color_white, self.lcd.Selected_Color,
+                    True, True, 0, self.lcd.font_8x16, self.color_white, self.Selected_Color,
                     3, 216, self.MBASE(self.PREHEAT_CASE_TEMP),
                     self.pd.material_preset[1].hotend_temp
                 )
@@ -1342,7 +1343,7 @@ class E3V3SE_DISPLAY:
                 self.checkkey = self.BedTemp
                 self.pd.HMI_ValueStruct.Bed_Temp = self.pd.material_preset[1].bed_temp
                 self.lcd.draw_int_value(
-                    True, True, 0, self.lcd.font_8x16, self.color_white, self.lcd.Selected_Color,
+                    True, True, 0, self.lcd.font_8x16, self.color_white, self.Selected_Color,
                     3, 216, self.MBASE(self.PREHEAT_CASE_BED),
                     self.pd.material_preset[1].bed_temp
                 )
@@ -1351,7 +1352,7 @@ class E3V3SE_DISPLAY:
                 self.checkkey = self.FanSpeed
                 self.pd.HMI_ValueStruct.Fan_speed = self.pd.material_preset[1].fan_speed
                 self.lcd.draw_int_value(
-                    True, True, 0, self.lcd.font_8x16, self.color_white, self.lcd.Selected_Color,
+                    True, True, 0, self.lcd.font_8x16, self.color_white, self.Selected_Color,
                     3, 216, self.MBASE(self.PREHEAT_CASE_FAN),
                     self.pd.material_preset[1].fan_speed
                 )
@@ -1380,7 +1381,7 @@ class E3V3SE_DISPLAY:
             if (self.pd.HMI_ValueStruct.show_mode == -1):  # temperature
                 self.checkkey = self.TemperatureID
                 self.lcd.draw_int_value(
-                    True, True, 0, self.lcd.font_8x16, self.color_white, self.color_Bg_Black,
+                    True, True, 0, self.lcd.font_8x16, self.color_white, self.color_background_black,
                     3, 216, self.MBASE(temp_line),
                     self.pd.HMI_ValueStruct.E_Temp
                 )
@@ -1388,7 +1389,7 @@ class E3V3SE_DISPLAY:
                 self.checkkey = self.PLAPreheat
                 self.pd.material_preset[0].hotend_temp = self.pd.HMI_ValueStruct.E_Temp
                 self.lcd.draw_int_value(
-                    True, True, 0, self.lcd.font_8x16, self.color_white, self.color_Bg_Black,
+                    True, True, 0, self.lcd.font_8x16, self.color_white, self.color_background_black,
                     3, 216, self.MBASE(temp_line),
                     self.pd.material_preset[0].hotend_temp
                 )
@@ -1397,7 +1398,7 @@ class E3V3SE_DISPLAY:
                 self.checkkey = self.ABSPreheat
                 self.pd.material_preset[1].hotend_temp = self.pd.HMI_ValueStruct.E_Temp
                 self.lcd.draw_int_value(
-                    True, True, 0, self.lcd.font_8x16, self.color_white, self.color_Bg_Black,
+                    True, True, 0, self.lcd.font_8x16, self.color_white, self.color_background_black,
                     3, 216, self.MBASE(temp_line),
                     self.pd.material_preset[1].hotend_temp
                 )
@@ -1405,7 +1406,7 @@ class E3V3SE_DISPLAY:
             else:  # tune
                 self.checkkey = self.Tune
                 self.lcd.draw_int_value(
-                    True, True, 0, self.lcd.font_8x16, self.color_white, self.color_Bg_Black,
+                    True, True, 0, self.lcd.font_8x16, self.color_white, self.color_background_black,
                     3, 216, self.MBASE(temp_line),
                     self.pd.HMI_ValueStruct.E_Temp
                 )
@@ -1425,7 +1426,7 @@ class E3V3SE_DISPLAY:
             self.pd.HMI_ValueStruct.E_Temp = self.pd.MIN_E_TEMP
         # E_Temp value
         self.lcd.draw_int_value(
-            True, True, 0, self.lcd.font_8x16, self.color_white, self.lcd.Selected_Color,
+            True, True, 0, self.lcd.font_8x16, self.color_white, self.Selected_Color,
             3, 216, self.MBASE(temp_line),
             self.pd.HMI_ValueStruct.E_Temp
         )
@@ -1449,7 +1450,7 @@ class E3V3SE_DISPLAY:
             if (self.pd.HMI_ValueStruct.show_mode == -1):  # temperature
                 self.checkkey = self.TemperatureID
                 self.lcd.draw_int_value(
-                    True, True, 0, self.lcd.font_8x16, self.color_white, self.color_Bg_Black,
+                    True, True, 0, self.lcd.font_8x16, self.color_white, self.color_background_black,
                     3, 216, self.MBASE(bed_line),
                     self.pd.HMI_ValueStruct.Bed_Temp
                 )
@@ -1457,7 +1458,7 @@ class E3V3SE_DISPLAY:
                 self.checkkey = self.PLAPreheat
                 self.pd.material_preset[0].bed_temp = self.pd.HMI_ValueStruct.Bed_Temp
                 self.lcd.draw_int_value(
-                    True, True, 0, self.lcd.font_8x16, self.color_white, self.color_Bg_Black,
+                    True, True, 0, self.lcd.font_8x16, self.color_white, self.color_background_black,
                     3, 216, self.MBASE(bed_line),
                     self.pd.material_preset[0].bed_temp
                 )
@@ -1466,7 +1467,7 @@ class E3V3SE_DISPLAY:
                 self.checkkey = self.ABSPreheat
                 self.pd.material_preset[1].bed_temp = self.pd.HMI_ValueStruct.Bed_Temp
                 self.lcd.draw_int_value(
-                    True, True, 0, self.lcd.font_8x16, self.color_white, self.color_Bg_Black,
+                    True, True, 0, self.lcd.font_8x16, self.color_white, self.color_background_black,
                     3, 216, self.MBASE(bed_line),
                     self.pd.material_preset[1].bed_temp
                 )
@@ -1474,7 +1475,7 @@ class E3V3SE_DISPLAY:
             else:  # tune
                 self.checkkey = self.Tune
                 self.lcd.draw_int_value(
-                    True, True, 0, self.lcd.font_8x16, self.color_white, self.color_Bg_Black,
+                    True, True, 0, self.lcd.font_8x16, self.color_white, self.color_background_black,
                     3, 216, self.MBASE(bed_line),
                     self.pd.HMI_ValueStruct.Bed_Temp
                 )
@@ -1494,7 +1495,7 @@ class E3V3SE_DISPLAY:
             self.pd.HMI_ValueStruct.Bed_Temp = self.pd.MIN_BED_TEMP
         # Bed_Temp value
         self.lcd.draw_int_value(
-            True, True, 0, self.lcd.font_8x16, self.color_white, self.lcd.Selected_Color,
+            True, True, 0, self.lcd.font_8x16, self.color_white, self.Selected_Color,
             3, 216, self.MBASE(bed_line),
             self.pd.HMI_ValueStruct.Bed_Temp
         )
@@ -1538,7 +1539,7 @@ class E3V3SE_DISPLAY:
 
             self.checkkey = self.Prepare if self.pd.HMI_ValueStruct.show_mode == -4 else self.Tune
             self.lcd.draw_signed_float(
-                self.lcd.font_8x16, self.color_Bg_Black, 2, 2, 202, self.MBASE(zoff_line),
+                self.lcd.font_8x16, self.color_background_black, 2, 2, 202, self.MBASE(zoff_line),
                 self.pd.HMI_ValueStruct.offset_value
             )
 
@@ -1561,7 +1562,7 @@ class E3V3SE_DISPLAY:
             self.pd.add_mm('Z', self.dwin_zoffset - self.last_zoffset)
 
         self.lcd.draw_signed_float(
-            self.lcd.font_8x16, self.lcd.Selected_Color, 2, 2, 202,
+            self.lcd.font_8x16, self.Selected_Color, 2, 2, 202,
             self.MBASE(zoff_line),
             self.pd.HMI_ValueStruct.offset_value
         )
@@ -1612,143 +1613,145 @@ class E3V3SE_DISPLAY:
 
     def Draw_Status_Area(self, with_update):
         #  Clear the bottom area of the screen
-        self.lcd.draw_rectangle(1, self.color_Bg_Black, 0, self.STATUS_Y, self.lcd.screen_width, self.lcd.screen_height - 1)
+        self.lcd.draw_rectangle(1, self.color_background_black, 0, self.STATUS_Y, self.lcd.screen_width, self.lcd.screen_height - 1)
 
         #nozzle temp area
         self.lcd.draw_icon(True, self.ICON, self.icon_hotend_temp, 6, 262)
         self.lcd.draw_int_value(
-            True, True, 0, self.lcd.font_12x24,
-            self.color_white, self.color_Bg_Black,
+            True, True, 0, self.lcd.font_6x12,
+            self.color_white, self.color_background_black,
             3, 26, 263,
             self.pd.thermalManager['temp_hotend'][0]['celsius']
         )
         self.lcd.draw_string(
-                False, self.lcd.font_12x24,
-            self.color_white, self.color_Bg_Black,
+                False, self.lcd.font_6x12,
+            self.color_white, self.color_background_black,
             26+  3 * self.STAT_CHR_W + 4, 263,
             "/"
         )
         self.lcd.draw_int_value(
-            False, True, 0, self.lcd.font_12x24,
-            self.color_white, self.color_Bg_Black, 3, 26+  3 * self.STAT_CHR_W + 5, 263,
+            False, True, 0, self.lcd.font_6x12,
+            self.color_white, self.color_background_black, 3, 26+  3 * self.STAT_CHR_W + 5, 263,
             self.pd.thermalManager['temp_hotend'][0]['target']
         )
 
         #bed temp area
         self.lcd.draw_icon(True, self.ICON, self.icon_bedtemp, 6, 294)
         self.lcd.draw_int_value(
-            True, True, 0, self.lcd.font_12x24, self.color_white,
-            self.color_Bg_Black, 3, 26, 295,
+            True, True, 0, self.lcd.font_6x12, self.color_white,
+            self.color_background_black, 3, 26, 295,
             self.pd.thermalManager['temp_bed']['celsius']
         )
         self.lcd.draw_string(
-            False, self.lcd.font_12x24, self.color_white,
-            self.color_Bg_Black, 26 + 3 * self.STAT_CHR_W + 4, 295,
+            False, self.lcd.font_6x12, self.color_white,
+            self.color_background_black, 26 + 3 * self.STAT_CHR_W + 4, 295,
             "/"
         )
         self.lcd.draw_int_value(
-            False, True, 0, self.lcd.font_12x24,
-            self.color_white, self.color_Bg_Black, 3, 26 + 3 * self.STAT_CHR_W + 5, 295,
+            False, True, 0, self.lcd.font_6x12,
+            self.color_white, self.color_background_black, 3, 26 + 3 * self.STAT_CHR_W + 5, 295,
             self.pd.thermalManager['temp_bed']['target']
         )
         
         #speed area
         self.lcd.draw_icon(True, self.ICON, self.icon_speed, 99, 262)
         self.lcd.draw_int_value(
-            True, True, 0, self.lcd.font_12x24,
-            self.color_white, self.color_Bg_Black, 3, 99 + 2 * self.STAT_CHR_W, 263,
+            True, True, 0, self.lcd.font_6x12,
+            self.color_white, self.color_background_black, 3, 99 + 2 * self.STAT_CHR_W, 263,
             self.pd.feedrate_percentage
         )
         self.lcd.draw_string(
-            False, self.lcd.font_12x24,
-            self.color_white, self.color_Bg_Black, 99 + 5 * self.STAT_CHR_W + 2, 263,
+            False, self.lcd.font_6x12,
+            self.color_white, self.color_background_black, 99 + 5 * self.STAT_CHR_W + 2, 263,
             "%"
         )
         
         #extrude area
         self.lcd.draw_icon(True, self.ICON, self.icon_MaxSpeedE, 99, 294)
         self.lcd.draw_int_value(
-            True, True, 0, self.lcd.font_12x24,
-            self.color_white, self.color_Bg_Black, 3, 99 + 2 * self.STAT_CHR_W, 295,
+            True, True, 0, self.lcd.font_6x12,
+            self.color_white, self.color_background_black, 3, 99 + 2 * self.STAT_CHR_W, 295,
             self.pd.feedrate_percentage
         )
         self.lcd.draw_string(
-            False, self.lcd.font_12x24,
-            self.color_white, self.color_Bg_Black, 99 + 5 * self.STAT_CHR_W + 2, 295,
+            False, self.lcd.font_6x12,
+            self.color_white, self.color_background_black, 99 + 5 * self.STAT_CHR_W + 2, 295,
             "%"
         )
         
         #fan speed area
         self.lcd.draw_icon(True, self.ICON, self.icon_FanSpeed, 165, 262)
         self.lcd.draw_int_value(
-            True, True, 0, self.lcd.font_12x24,
-            self.color_white, self.color_Bg_Black, 3, 165 + 2 * self.STAT_CHR_W, 263,
+            True, True, 0, self.lcd.font_6x12,
+            self.color_white, self.color_background_black, 3, 165 + 2 * self.STAT_CHR_W, 263,
             self.pd.feedrate_percentage
         )
         self.lcd.draw_string(
-            False, self.lcd.font_12x24,
-            self.color_white, self.color_Bg_Black, 165 + 5 * self.STAT_CHR_W + 2, 263,
+            False, self.lcd.font_6x12,
+            self.color_white, self.color_background_black, 165 + 5 * self.STAT_CHR_W + 2, 263,
             "%"
         )
 
         #Z offset area
         self.lcd.draw_icon(True, self.ICON, self.icon_z_offset, 165, 294)
-        self.lcd.draw_signed_float(self.lcd.font_12x24, self.color_Bg_Black, 2, 2, 191, 295, self.pd.BABY_Z_VAR * 100)
-        # if with_update:
-            # self.lcd.UpdateLCD()
-        #     time.sleep(.005)
+        self.lcd.draw_signed_float(self.lcd.font_6x12, self.color_background_black, 2, 2, 191, 295, self.pd.BABY_Z_VAR * 100)
+        
+        if with_update:
+            time.sleep(.005)
 
     def Draw_Title(self, title):
-        self.lcd.draw_string(False, self.lcd.font_12x24, self.color_white, self.color_Bg_Grey, 14, 4, title)
+        self.lcd.draw_string(False, self.lcd.font_12x24, self.color_white, self.color_background_grey, 14, 4, title)
 
     def Draw_Popup_Bkgd_105(self):
-        self.lcd.draw_rectangle(1, self.color_Bg_Window, 14, 105, 258, 374)
+        self.lcd.draw_rectangle(1, self.color_popup_background, 12, 105, 258, 374)
 
     def Draw_More_Icon(self, line):
         self.lcd.draw_icon(True, self.ICON, self.icon_more, 226, self.MBASE(line) - 3)
 
     def Draw_Menu_Cursor(self, line):
-        self.lcd.draw_rectangle(1, self.lcd.Rectangle_Color, 0, self.MBASE(line) - 18, 14, self.MBASE(line + 1) - 20)
+        self.lcd.draw_rectangle(1, self.Rectangle_color, 0, self.MBASE(line) - 18, 10, self.MBASE(line + 1) - 20)
 
     def Draw_Menu_Icon(self, line, icon):
-        self.lcd.draw_icon(True, self.ICON, icon, 26, self.MBASE(line) - 3)
+        self.lcd.draw_icon(True, self.ICON, icon, 20, self.MBASE(line) - 5)
 
     def Draw_Menu_Line(self, line, icon=False, label=False):
         if (label):
-            self.lcd.draw_string(False, self.lcd.font_8x16, self.color_white, self.color_Bg_Black, self.LBLX, self.MBASE(line) - 1, label)
+            self.lcd.draw_rectangle(1, self.color_background_black, self.LBLX, self.MBASE(line) - 1, self.lcd.screen_width, self.MBASE(line + 1) - 22)
+            self.lcd.draw_string(True, self.lcd.font_8x8, self.color_white, self.color_background_black, self.LBLX, self.MBASE(line) - 1, label)
         if (icon):
             self.Draw_Menu_Icon(line, icon)
-        self.lcd.draw_line(self.lcd.Line_Color, 16, self.MBASE(line) + 33, 256, self.MBASE(line) + 34)
+        self.lcd.draw_line(self.color_line, 15, self.MBASE(line + 1) - 22, 235,  self.MBASE(line + 1) - 22)
+
 
     # The "Back" label is always on the first line
     def Draw_Back_Label(self):
-        self.lcd.copy_frame_area(1, 226, 179, 256, 189, self.LBLX, self.MBASE(0))
+        self.lcd.move_screen_area(1, 226, 179, 256, 189, self.LBLX, self.MBASE(0))
 
     # Draw "Back" line at the top
     def Draw_Back_First(self, is_sel=True):
-        self.Draw_Menu_Line(0, self.icon_back)
-        self.Draw_Back_Label()
+        self.Draw_Menu_Line(0, self.icon_back, 'Back to menu')
+        # self.Draw_Back_Label()
         if (is_sel):
             self.Draw_Menu_Cursor(0)
 
     def draw_move_en(self, line):
-        self.lcd.copy_frame_area(1, 69, 61, 102, 71, self.LBLX, line)  # "Move"
+        self.lcd.move_screen_area(1, 69, 61, 102, 71, self.LBLX, line)  # "Move"
 
     def draw_max_en(self, line):
-        self.lcd.copy_frame_area(1, 245, 119, 269, 129, self.LBLX, line)  # "Max"
+        self.lcd.move_screen_area(1, 245, 119, 269, 129, self.LBLX, line)  # "Max"
 
     def draw_max_accel_en(self, line):
         self.draw_max_en(line)
-        self.lcd.copy_frame_area(1, 1, 135, 79, 145, self.LBLX + 27, line)  # "Acceleration"
+        self.lcd.move_screen_area(1, 1, 135, 79, 145, self.LBLX + 27, line)  # "Acceleration"
 
     def draw_speed_en(self, inset, line):
-        self.lcd.copy_frame_area(1, 184, 119, 224, 132, self.LBLX + inset, line)  # "Speed"
+        self.lcd.move_screen_area(1, 184, 119, 224, 132, self.LBLX + inset, line)  # "Speed"
 
     def draw_jerk_en(self, line):
-        self.lcd.copy_frame_area(1, 64, 119, 106, 129, self.LBLX + 27, line)  # "Jerk"
+        self.lcd.move_screen_area(1, 64, 119, 106, 129, self.LBLX + 27, line)  # "Jerk"
 
     def draw_steps_per_mm(self, line):
-        self.lcd.copy_frame_area(1, 1, 151, 101, 161, self.LBLX, line)  # "Steps-per-mm"
+        self.lcd.move_screen_area(1, 1, 151, 101, 161, self.LBLX, line)  # "Steps-per-mm"
 
     # Display an SD item
     def Draw_SDItem(self, item, row=0):
@@ -1758,18 +1761,18 @@ class E3V3SE_DISPLAY:
     def Draw_Select_Highlight(self, sel):
         self.pd.HMI_flag.select_flag = sel
         if sel:
-            c1 = self.lcd.Selected_Color
-            c2 = self.color_Bg_Window
+            c1 = self.Selected_color
+            c2 = self.color_popup_background
         else:
-            c1 = self.color_Bg_Window
-            c2 = self.lcd.Selected_Color
+            c1 = self.color_popup_background
+            c2 = self.Selected_Color
         self.lcd.draw_rectangle(0, c1, 25, 279, 126, 318)
         self.lcd.draw_rectangle(0, c1, 24, 278, 127, 319)
         self.lcd.draw_rectangle(0, c2, 145, 279, 246, 318)
         self.lcd.draw_rectangle(0, c2, 144, 278, 247, 319)
 
     def Draw_Popup_Bkgd_60(self):
-        self.lcd.draw_rectangle(1, self.color_Bg_Window, 14, 60, 258, 330)
+        self.lcd.draw_rectangle(1, self.color_popup_background, 14, 60, 258, 330)
 
     def Draw_Printing_Screen(self):
         # Tune
@@ -1798,26 +1801,27 @@ class E3V3SE_DISPLAY:
     def Draw_Print_ProgressElapsed(self):
         
         elapsed = self.pd.duration()  # print timer 
-        self.lcd.draw_int_value(True, True, 1, self.lcd.font_8x16, self.color_white, self.color_Bg_Black, 2, 141, 92, elapsed / 3600)
-        self.lcd.draw_string(False, self.lcd.font_8x16, self.color_white, self.color_Bg_Black, 164, 92, ":")
-        self.lcd.draw_int_value(False, True, 1, self.lcd.font_8x16, self.color_white, self.color_Bg_Black, 2, 165, 92, (elapsed % 3600) / 60)
+        self.lcd.draw_int_value(True, True, 1, self.lcd.font_8x16, self.color_white, self.color_background_black, 2, 141, 92, elapsed / 3600)
+        self.lcd.draw_string(False, self.lcd.font_8x16, self.color_white, self.color_background_black, 164, 92, ":")
+        self.lcd.draw_int_value(False, True, 1, self.lcd.font_8x16, self.color_white, self.color_background_black, 2, 165, 92, (elapsed % 3600) / 60)
 
     def Draw_Print_ProgressRemain(self):
         remain_time = self.pd.remain()
         if not remain_time: return #time remaining is None during warmup.
-        self.lcd.draw_int_value(True, True, 1, self.lcd.font_8x16, self.color_white, self.color_Bg_Black, 2, 141, 153, remain_time / 3600)
-        self.lcd.draw_string(False, self.lcd.font_8x16, self.color_white, self.color_Bg_Black, 164, 153, ':')
-        self.lcd.draw_int_value(False, True, 1, self.lcd.font_8x16, self.color_white, self.color_Bg_Black, 2, 165, 153, (remain_time % 3600) / 60)
+        self.lcd.draw_int_value(True, True, 1, self.lcd.font_8x16, self.color_white, self.color_background_black, 2, 141, 153, remain_time / 3600)
+        self.lcd.draw_string(False, self.lcd.font_8x16, self.color_white, self.color_background_black, 164, 153, ':')
+        self.lcd.draw_int_value(False, True, 1, self.lcd.font_8x16, self.color_white, self.color_background_black, 2, 165, 153, (remain_time % 3600) / 60)
 
     def Draw_Print_File_Menu(self):
         self.Clear_Title_Bar()
-        self.Frame_TitleCopy(1, 52, 31, 137, 41)  # "Print file"
+        self.lcd.draw_icon(False,self.selected_language,self.icon_TEXT_header_file_selection, self.HEADER_HEIGHT, 1)
         self.Redraw_SD_List()
+        self.Draw_Status_Area(True)
 
     def Draw_Prepare_Menu(self):
         self.Clear_Main_Window()
         scroll = self.MROWS - self.index_prepare
-        self.Frame_TitleCopy(1, 178, 2, 229, 14)  # "Prepare"
+        # self.Frame_TitleCopy(1, 178, 2, 229, 14)  # "Prepare"
         self.Draw_Back_First(self.select_prepare.now == 0)  # < Back
         if scroll + self.PREPARE_CASE_MOVE <= self.MROWS:
             self.Item_Prepare_Move(self.PREPARE_CASE_MOVE)  # Move >
@@ -1842,10 +1846,10 @@ class E3V3SE_DISPLAY:
     def Draw_Control_Menu(self):
         self.Clear_Main_Window()
         self.Draw_Back_First(self.select_control.now == 0)
-        self.Frame_TitleCopy(1, 128, 2, 176, 12)  # "Control"
-        self.lcd.copy_frame_area(1, 1, 89, 83, 101, self.LBLX, self.MBASE(self.CONTROL_CASE_TEMP))  # Temperature >
-        self.lcd.copy_frame_area(1, 84, 89, 128, 99, self.LBLX, self.MBASE(self.CONTROL_CASE_MOVE))  # Motion >
-        self.lcd.copy_frame_area(1, 0, 104, 25, 115, self.LBLX, self.MBASE(self.CONTROL_CASE_INFO))  # Info >
+        # self.Frame_TitleCopy(1, 128, 2, 176, 12)  # "Control"
+        self.lcd.move_screen_area(1, 1, 89, 83, 101, self.LBLX, self.MBASE(self.CONTROL_CASE_TEMP))  # Temperature >
+        self.lcd.move_screen_area(1, 84, 89, 128, 99, self.LBLX, self.MBASE(self.CONTROL_CASE_MOVE))  # Motion >
+        self.lcd.move_screen_area(1, 0, 104, 25, 115, self.LBLX, self.MBASE(self.CONTROL_CASE_INFO))  # Info >
 
         if self.select_control.now and self.select_control.now < self.MROWS:
             self.Draw_Menu_Cursor(self.select_control.now)
@@ -1862,56 +1866,56 @@ class E3V3SE_DISPLAY:
         self.Clear_Main_Window()
 
         self.lcd.draw_string(
-            False, self.lcd.font_8x16, self.color_white, self.color_Bg_Black,
+            False, self.lcd.font_8x16, self.color_white, self.color_background_black,
             (self.lcd.screen_width - len(self.pd.MACHINE_SIZE) * self.MENU_CHR_W) / 2, 122,
             self.pd.MACHINE_SIZE
         )
         self.lcd.draw_string(
-            False, self.lcd.font_8x16, self.color_white, self.color_Bg_Black,
+            False, self.lcd.font_8x16, self.color_white, self.color_background_black,
             (self.lcd.screen_width - len(self.pd.SHORT_BUILD_VERSION) * self.MENU_CHR_W) / 2, 195,
             self.pd.SHORT_BUILD_VERSION
         )
-        self.Frame_TitleCopy(1, 190, 16, 215, 26)  # "Info"
-        self.lcd.copy_frame_area(1, 120, 150, 146, 161, 124, 102)
-        self.lcd.copy_frame_area(1, 146, 151, 254, 161, 82, 175)
-        self.lcd.copy_frame_area(1, 0, 165, 94, 175, 89, 248)
+        # self.Frame_TitleCopy(1, 190, 16, 215, 26)  # "Info"
+        self.lcd.move_screen_area(1, 120, 150, 146, 161, 124, 102)
+        self.lcd.move_screen_area(1, 146, 151, 254, 161, 82, 175)
+        self.lcd.move_screen_area(1, 0, 165, 94, 175, 89, 248)
         self.lcd.draw_string(
-            False, self.lcd.font_8x16, self.color_white, self.color_Bg_Black,
+            False, self.lcd.font_8x16, self.color_white, self.color_background_black,
             (self.lcd.screen_width - len(self.pd.CORP_WEBSITE_E) * self.MENU_CHR_W) / 2, 268,
             self.pd.CORP_WEBSITE_E
         )
         self.Draw_Back_First()
         for i in range(3):
             self.lcd.draw_icon(True, self.ICON, self.icon_PrintSize + i, 26, 99 + i * 73)
-            self.lcd.draw_line(self.lcd.Line_Color, 16, self.MBASE(2) + i * 73, 256, 156 + i * 73)
+            self.lcd.draw_line(self.color_line, 16, self.MBASE(2) + i * 73, 256, 156 + i * 73)
 
     def Draw_Tune_Menu(self):
         self.Clear_Main_Window()
-        self.lcd.copy_frame_area(1, 94, 2, 126, 12, 14, 9)
-        self.lcd.copy_frame_area(1, 1, 179, 92, 190, self.LBLX, self.MBASE(self.TUNE_CASE_SPEED))  # Print speed
+        self.lcd.move_screen_area(1, 94, 2, 126, 12, 14, 9)
+        self.lcd.move_screen_area(1, 1, 179, 92, 190, self.LBLX, self.MBASE(self.TUNE_CASE_SPEED))  # Print speed
         if self.pd.HAS_HOTEND:
-            self.lcd.copy_frame_area(1, 197, 104, 238, 114, self.LBLX, self.MBASE(self.TUNE_CASE_TEMP))  # Hotend...
-            self.lcd.copy_frame_area(1, 1, 89, 83, 101, self.LBLX + 44, self.MBASE(self.TUNE_CASE_TEMP))  # Temperature
+            self.lcd.move_screen_area(1, 197, 104, 238, 114, self.LBLX, self.MBASE(self.TUNE_CASE_TEMP))  # Hotend...
+            self.lcd.move_screen_area(1, 1, 89, 83, 101, self.LBLX + 44, self.MBASE(self.TUNE_CASE_TEMP))  # Temperature
         if self.pd.HAS_HEATED_BED:
-            self.lcd.copy_frame_area(1, 240, 104, 264, 114, self.LBLX, self.MBASE(self.TUNE_CASE_BED))  # Bed...
-            self.lcd.copy_frame_area(1, 1, 89, 83, 101, self.LBLX + 27, self.MBASE(self.TUNE_CASE_BED))  # ...Temperature
+            self.lcd.move_screen_area(1, 240, 104, 264, 114, self.LBLX, self.MBASE(self.TUNE_CASE_BED))  # Bed...
+            self.lcd.move_screen_area(1, 1, 89, 83, 101, self.LBLX + 27, self.MBASE(self.TUNE_CASE_BED))  # ...Temperature
         if self.pd.HAS_FAN:
-             self.lcd.copy_frame_area(1, 0, 119, 64, 132, self.LBLX, self.MBASE(self.TUNE_CASE_FAN))  # Fan speed
+             self.lcd.move_screen_area(1, 0, 119, 64, 132, self.LBLX, self.MBASE(self.TUNE_CASE_FAN))  # Fan speed
         if self.pd.HAS_ZOFFSET_ITEM:
-             self.lcd.copy_frame_area(1, 93, 179, 141, 189, self.LBLX, self.MBASE(self.TUNE_CASE_ZOFF))  # Z-offset
+             self.lcd.move_screen_area(1, 93, 179, 141, 189, self.LBLX, self.MBASE(self.TUNE_CASE_ZOFF))  # Z-offset
         self.Draw_Back_First(self.select_tune.now == 0)
         if (self.select_tune.now):
             self.Draw_Menu_Cursor(self.select_tune.now)
 
         self.Draw_Menu_Line(self.TUNE_CASE_SPEED, self.icon_speed)
         self.lcd.draw_int_value(
-            True, True, 0, self.lcd.font_8x16, self.color_white, self.color_Bg_Black,
+            True, True, 0, self.lcd.font_8x16, self.color_white, self.color_background_black,
             3, 216, self.MBASE(self.TUNE_CASE_SPEED), self.pd.feedrate_percentage)
 
         if self.pd.HAS_HOTEND:
             self.Draw_Menu_Line(self.TUNE_CASE_TEMP, self.icon_hotend_temp)
             self.lcd.draw_int_value(
-                True, True, 0, self.lcd.font_8x16, self.color_white, self.color_Bg_Black,
+                True, True, 0, self.lcd.font_8x16, self.color_white, self.color_background_black,
                 3, 216, self.MBASE(self.TUNE_CASE_TEMP),
                 self.pd.thermalManager['temp_hotend'][0]['target']
             )
@@ -1919,40 +1923,40 @@ class E3V3SE_DISPLAY:
         if self.pd.HAS_HEATED_BED:
             self.Draw_Menu_Line(self.TUNE_CASE_BED, self.icon_bedtemp)
             self.lcd.draw_int_value(
-                True, True, 0, self.lcd.font_8x16, self.color_white, self.color_Bg_Black,
+                True, True, 0, self.lcd.font_8x16, self.color_white, self.color_background_black,
                 3, 216, self.MBASE(self.TUNE_CASE_BED), self.pd.thermalManager['temp_bed']['target'])
 
         if self.pd.HAS_FAN:
              self.Draw_Menu_Line(self.TUNE_CASE_FAN, self.icon_FanSpeed)
              self.lcd.draw_int_value(
-                 True, True, 0, self.lcd.font_8x16, self.color_white, self.color_Bg_Black,
+                 True, True, 0, self.lcd.font_8x16, self.color_white, self.color_background_black,
                  3, 216, self.MBASE(self.TUNE_CASE_FAN),
                  self.pd.thermalManager['fan_speed'][0]
              )
         if self.pd.HAS_ZOFFSET_ITEM:
              self.Draw_Menu_Line(self.TUNE_CASE_ZOFF, self.icon_z_offset)
              self.lcd.draw_signed_float(
-                 self.lcd.font_8x16, self.color_Bg_Black, 2, 2, 202, self.MBASE(self.TUNE_CASE_ZOFF), self.pd.BABY_Z_VAR * 100
+                 self.lcd.font_8x16, self.color_background_black, 2, 2, 202, self.MBASE(self.TUNE_CASE_ZOFF), self.pd.BABY_Z_VAR * 100
              )
 
     def Draw_Temperature_Menu(self):
         self.Clear_Main_Window()
-        self.Frame_TitleCopy(1, 56, 16, 141, 28)  # "Temperature"
+        # self.Frame_TitleCopy(1, 56, 16, 141, 28)  # "Temperature"
         if self.pd.HAS_HOTEND:
-            self.lcd.copy_frame_area(1, 197, 104, 238, 114, self.LBLX, self.MBASE(self.TEMP_CASE_TEMP))  # Nozzle...
-            self.lcd.copy_frame_area(1, 1, 89, 83, 101, self.LBLX + 44, self.MBASE(self.TEMP_CASE_TEMP))  # ...Temperature
+            self.lcd.move_screen_area(1, 197, 104, 238, 114, self.LBLX, self.MBASE(self.TEMP_CASE_TEMP))  # Nozzle...
+            self.lcd.move_screen_area(1, 1, 89, 83, 101, self.LBLX + 44, self.MBASE(self.TEMP_CASE_TEMP))  # ...Temperature
         if self.pd.HAS_HEATED_BED:
-            self.lcd.copy_frame_area(1, 240, 104, 264, 114, self.LBLX, self.MBASE(self.TEMP_CASE_BED))  # Bed...
-            self.lcd.copy_frame_area(1, 1, 89, 83, 101, self.LBLX + 27, self.MBASE(self.TEMP_CASE_BED))  # ...Temperature
+            self.lcd.move_screen_area(1, 240, 104, 264, 114, self.LBLX, self.MBASE(self.TEMP_CASE_BED))  # Bed...
+            self.lcd.move_screen_area(1, 1, 89, 83, 101, self.LBLX + 27, self.MBASE(self.TEMP_CASE_BED))  # ...Temperature
         if self.pd.HAS_FAN:
-            self.lcd.copy_frame_area(1, 0, 119, 64, 132, self.LBLX, self.MBASE(self.TEMP_CASE_FAN))  # Fan speed
+            self.lcd.move_screen_area(1, 0, 119, 64, 132, self.LBLX, self.MBASE(self.TEMP_CASE_FAN))  # Fan speed
         if self.pd.HAS_HOTEND:
-            self.lcd.copy_frame_area(1, 107, 76, 156, 86, self.LBLX, self.MBASE(self.TEMP_CASE_PLA))  # Preheat...
-            self.lcd.copy_frame_area(1, 157, 76, 181, 86, self.LBLX + 52, self.MBASE(self.TEMP_CASE_PLA))  # ...PLA
-            self.lcd.copy_frame_area(1, 131, 119, 182, 132, self.LBLX + 79, self.MBASE(self.TEMP_CASE_PLA))  # PLA setting
-            self.lcd.copy_frame_area(1, 107, 76, 156, 86, self.LBLX, self.MBASE(self.TEMP_CASE_ABS))  # Preheat...
-            self.lcd.copy_frame_area(1, 172, 76, 198, 86, self.LBLX + 52, self.MBASE(self.TEMP_CASE_ABS))  # ...ABS
-            self.lcd.copy_frame_area(1, 131, 119, 182, 132, self.LBLX + 81, self.MBASE(self.TEMP_CASE_ABS))  # ABS setting
+            self.lcd.move_screen_area(1, 107, 76, 156, 86, self.LBLX, self.MBASE(self.TEMP_CASE_PLA))  # Preheat...
+            self.lcd.move_screen_area(1, 157, 76, 181, 86, self.LBLX + 52, self.MBASE(self.TEMP_CASE_PLA))  # ...PLA
+            self.lcd.move_screen_area(1, 131, 119, 182, 132, self.LBLX + 79, self.MBASE(self.TEMP_CASE_PLA))  # PLA setting
+            self.lcd.move_screen_area(1, 107, 76, 156, 86, self.LBLX, self.MBASE(self.TEMP_CASE_ABS))  # Preheat...
+            self.lcd.move_screen_area(1, 172, 76, 198, 86, self.LBLX + 52, self.MBASE(self.TEMP_CASE_ABS))  # ...ABS
+            self.lcd.move_screen_area(1, 131, 119, 182, 132, self.LBLX + 81, self.MBASE(self.TEMP_CASE_ABS))  # ABS setting
 
         self.Draw_Back_First(self.select_temp.now == 0)
         if (self.select_temp.now):
@@ -1964,7 +1968,7 @@ class E3V3SE_DISPLAY:
             i += 1
             self.Draw_Menu_Line(self.icon_SetEndTemp + (self.TEMP_CASE_TEMP) - 1)
             self.lcd.draw_int_value(
-                True, True, 0, self.lcd.font_8x16, self.color_white, self.color_Bg_Black,
+                True, True, 0, self.lcd.font_8x16, self.color_white, self.color_background_black,
                 3, 216, self.MBASE(i),
                 self.pd.thermalManager['temp_hotend'][0]['target']
             )
@@ -1972,7 +1976,7 @@ class E3V3SE_DISPLAY:
             i += 1
             self.Draw_Menu_Line(self.icon_SetEndTemp + (self.TEMP_CASE_BED) - 1)
             self.lcd.draw_int_value(
-                True, True, 0, self.lcd.font_8x16, self.color_white, self.color_Bg_Black,
+                True, True, 0, self.lcd.font_8x16, self.color_white, self.color_background_black,
                 3, 216, self.MBASE(i),
                 self.pd.thermalManager['temp_bed']['target']
             )
@@ -1980,7 +1984,7 @@ class E3V3SE_DISPLAY:
             i += 1
             self.Draw_Menu_Line(self.icon_SetEndTemp + (self.TEMP_CASE_FAN) - 1)
             self.lcd.draw_int_value(
-                True, True, 0, self.lcd.font_8x16, self.color_white, self.color_Bg_Black,
+                True, True, 0, self.lcd.font_8x16, self.color_white, self.color_background_black,
                 3, 216, self.MBASE(i),
                 self.pd.thermalManager['fan_speed'][0]
             )
@@ -1995,7 +1999,7 @@ class E3V3SE_DISPLAY:
 
     def Draw_Motion_Menu(self):
         self.Clear_Main_Window()
-        self.Frame_TitleCopy(1, 144, 16, 189, 26)  # "Motion"
+        # self.Frame_TitleCopy(1, 144, 16, 189, 26)  # "Motion"
         self.draw_max_en(self.MBASE(self.MOTION_CASE_RATE))
         self.draw_speed_en(27, self.MBASE(self.MOTION_CASE_RATE))  # "Max Speed"
         self.draw_max_accel_en(self.MBASE(self.MOTION_CASE_ACCEL))  # "Max Acceleration"
@@ -2017,15 +2021,15 @@ class E3V3SE_DISPLAY:
 
     def Draw_Move_Menu(self):
         self.Clear_Main_Window()
-        self.Frame_TitleCopy(1, 231, 2, 265, 12)  # "Move"
+        # self.Frame_TitleCopy(1, 231, 2, 265, 12)  # "Move"
         self.draw_move_en(self.MBASE(1))
         self.say_x(36, self.MBASE(1))  # "Move X"
         self.draw_move_en(self.MBASE(2))
         self.say_y(36, self.MBASE(2))  # "Move Y"
         self.draw_move_en(self.MBASE(3))
         self.say_z(36, self.MBASE(3))  # "Move Z"
-        if self.pd.HAS_HOTEND:
-            self.lcd.copy_frame_area(1, 123, 192, 176, 202, self.LBLX, self.MBASE(4))  # "Extruder"
+        # if self.pd.HAS_HOTEND:
+        #     self.lcd.move_screen_area(1, 123, 192, 176, 202, self.LBLX, self.MBASE(4))  # "Extruder"
 
         self.Draw_Back_First(self.select_axis.now == 0)
         if (self.select_axis.now):
@@ -2040,7 +2044,7 @@ class E3V3SE_DISPLAY:
 
     def Goto_MainMenu(self):
         self.checkkey = self.MainMenu
-        self.Clear_Main_Window()
+        self.Clear_Screen()
 
         self.lcd.draw_icon(True,self.selected_language, self.icon_TEXT_header_main, 29, 1)
 
@@ -2055,7 +2059,6 @@ class E3V3SE_DISPLAY:
     def Goto_PrintProcess(self):
         self.checkkey = self.PrintProcess
         self.Clear_Main_Window()
-        
         self.lcd.draw_icon(True,self.selected_language, self.icon_TEXT_header_printing, 29, 1)
         self.Draw_Printing_Screen()
 
@@ -2070,42 +2073,51 @@ class E3V3SE_DISPLAY:
         name = self.pd.file_name
         if name:
             npos = _MAX(0, self.lcd.screen_width - len(name) * self.MENU_CHR_W) / 2
-            self.lcd.draw_string(False, self.lcd.font_8x16, self.color_white, self.color_Bg_Black, npos, 40, name)
+            self.lcd.draw_string(False, self.lcd.font_6x12, self.color_white, self.color_background_black, npos, 40, name)
 
 
         self.Draw_Print_ProgressBar()
         self.Draw_Print_ProgressElapsed()
         self.Draw_Print_ProgressRemain()
+        self.Draw_Status_Area(True)
 
     # --------------------------------------------------------------#
     # --------------------------------------------------------------#
 
     def Clear_Title_Bar(self):
-        self.lcd.draw_rectangle(1, self.color_Bg_Grey, 0, 0, self.lcd.screen_width, 30)
+        self.lcd.draw_rectangle(1, self.color_background_grey, 0, 0, self.lcd.screen_width, self.HEADER_HEIGHT)
 
     def Clear_Menu_Area(self):
-        self.lcd.draw_rectangle(1, self.color_Bg_Black, 0, 31, self.lcd.screen_width, self.STATUS_Y)
+        self.lcd.draw_rectangle(1, self.color_background_black, 0, self.HEADER_HEIGHT, self.lcd.screen_width, self.STATUS_Y)
+        
+    def Clear_Status_Area(self):
+        self.lcd.draw_rectangle(1, self.color_background_black, 0, self.STATUS_Y, self.lcd.screen_width, self.lcd.screen_height)
 
     def Clear_Main_Window(self):
         self.Clear_Title_Bar()
         self.Clear_Menu_Area()
+    
+    def Clear_Screen(self):
+        self.Clear_Title_Bar()
+        self.Clear_Menu_Area()
+        self.Clear_Status_Area()
 
     def Clear_Popup_Area(self):
         self.Clear_Title_Bar()
-        self.lcd.draw_rectangle(1, self.color_Bg_Black, 0, 31, self.lcd.screen_width, self.lcd.screen_height)
+        self.lcd.draw_rectangle(1, self.color_background_black, 0, 31, self.lcd.screen_width, self.lcd.screen_height)
 
     def Popup_window_PauseOrStop(self):
         self.Clear_Main_Window()
         self.Draw_Popup_Bkgd_60()
         if(self.select_print.now == 1):
             self.lcd.draw_string(
-                False, True, self.lcd.font_8x16, self.lcd.Popup_Text_Color, self.color_Bg_Window,
+                False, True, self.lcd.font_8x16, self.lcd.Popup_Text_Color, self.color_popup_background,
                 (272 - 8 * 11) / 2, 150,
                 self.MSG_PAUSE_PRINT
             )
         elif (self.select_print.now == 2):
             self.lcd.draw_string(
-                False, True, self.lcd.font_8x16, self.lcd.Popup_Text_Color, self.color_Bg_Window,
+                False, True, self.lcd.font_8x16, self.lcd.Popup_Text_Color, self.color_popup_background,
                 (272 - 8 * 10) / 2, 150,
                 self.MSG_STOP_PRINT
             )
@@ -2119,15 +2131,15 @@ class E3V3SE_DISPLAY:
         self.lcd.draw_icon(True, self.ICON, self.icon_BLTouch, 101, 105)
         if parking:
             self.lcd.draw_string(
-                False, True, self.lcd.font_8x16, self.lcd.Popup_Text_Color, self.color_Bg_Window,
+                False, True, self.lcd.font_8x16, self.lcd.Popup_Text_Color, self.color_popup_background,
                 (272 - 8 * (7)) / 2, 230, "Parking")
         else:
             self.lcd.draw_string(
-                False, True, self.lcd.font_8x16, self.lcd.Popup_Text_Color, self.color_Bg_Window,
+                False, True, self.lcd.font_8x16, self.lcd.Popup_Text_Color, self.color_popup_background,
                 (272 - 8 * (10)) / 2, 230, "Homing XYZ")
 
         self.lcd.draw_string(
-            False, True, self.lcd.font_8x16, self.lcd.Popup_Text_Color, self.color_Bg_Window,
+            False, True, self.lcd.font_8x16, self.lcd.Popup_Text_Color, self.color_popup_background,
             (272 - 8 * 23) / 2, 260, "Please wait until done.")
 
     def Popup_Window_ETempTooLow(self):
@@ -2136,16 +2148,16 @@ class E3V3SE_DISPLAY:
         self.lcd.draw_icon(True, self.ICON, self.icon_TempTooLow, 102, 105)
         self.lcd.draw_string(
             False, True, self.lcd.font_8x16, self.lcd.Popup_Text_Color,
-            self.color_Bg_Window, 20, 235,
+            self.color_popup_background, 20, 235,
             "Nozzle is too cold"
         )
         self.lcd.draw_icon(True, self.ICON, self.icon_Confirm_E, 86, 280)
 
     def Erase_Menu_Cursor(self, line):
-        self.lcd.draw_rectangle(1, self.color_Bg_Black, 0, self.MBASE(line) - 18, 14, self.MBASE(line + 1) - 20)
+        self.lcd.draw_rectangle(1, self.color_background_black, 0, self.MBASE(line) - 18, 14, self.MBASE(line + 1) - 20)
 
     def Erase_Menu_Text(self, line):
-        self.lcd.draw_rectangle(1, self.color_Bg_Black, self.LBLX, self.MBASE(line) - 14, 271, self.MBASE(line) + 28)
+        self.lcd.draw_rectangle(1, self.color_background_black, self.LBLX, self.MBASE(line) - 14, 271, self.MBASE(line) + 28)
 
     def Move_Highlight(self, ffrom, newline):
         self.Erase_Menu_Cursor(newline - ffrom)
@@ -2153,20 +2165,20 @@ class E3V3SE_DISPLAY:
 
     def Add_Menu_Line(self):
         self.Move_Highlight(1, self.MROWS)
-        self.lcd.draw_line(self.lcd.Line_Color, 16, self.MBASE(self.MROWS + 1) - 20, 256, self.MBASE(self.MROWS + 1) - 19)
+        self.lcd.draw_line(self.color_line, 18, self.MBASE(self.MROWS + 1) - 22, 238, self.MBASE(self.MROWS + 1) - 22)
 
     def Scroll_Menu(self, dir):
-        self.lcd.Frame_AreaMove(1, dir, self.MLINE, self.color_Bg_Black, 0, 31, self.lcd.screen_width, 349)
-        if dir == self.DWIN_SCROLL_DOWN:
+        self.lcd.move_screen_area(dir, self.MLINE, self.color_background_grey, 12, self.HEADER_HEIGHT , self.lcd.screen_width-1, self.STATUS_Y)
+        if dir == self.scroll_down:
             self.Move_Highlight(-1, 0)
-        elif dir == self.DWIN_SCROLL_UP:
+        elif dir == self.scroll_up:
             self.Add_Menu_Line()
 
     # Redraw the first set of SD Files
     def Redraw_SD_List(self):
         self.select_file.reset()
         self.index_file = self.MROWS
-        self.Clear_Menu_Area()  # Leave title bar unchanged
+        self.Clear_Menu_Area()  # Leave title bar unchanged, clear only middle of screen
         self.Draw_Back_First()
         fl = self.pd.GetFiles()
         ed = len(fl)
@@ -2176,7 +2188,7 @@ class E3V3SE_DISPLAY:
             for i in range(ed):
                 self.Draw_SDItem(i, i + 1)
         else:
-            self.lcd.draw_rectangle(1, self.color_Bg_Red, 10, self.MBASE(3) - 10, self.lcd.screen_width - 10, self.MBASE(4))
+            self.lcd.draw_rectangle(1, self.color_Bg_Red, 11, 25, self.MBASE(3) - 10, self.lcd.screen_width - 10, self.MBASE(4))
             self.lcd.draw_string(False, self.lcd.font_16x32, self.color_yellow, self.color_Bg_Red, ((self.lcd.screen_width) - 8 * 16) / 2, self.MBASE(3), "No Media")
 
     def CompletedHoming(self):
@@ -2193,16 +2205,16 @@ class E3V3SE_DISPLAY:
             self.Goto_MainMenu()
 
     def say_x(self, inset, line):
-        self.lcd.copy_frame_area(1, 95, 104, 102, 114, self.LBLX + inset, line)  # "X"
+        self.lcd.move_screen_area(1, 95, 104, 102, 114, self.LBLX + inset, line)  # "X"
 
     def say_y(self, inset, line):
-        self.lcd.copy_frame_area(1, 104, 104, 110, 114, self.LBLX + inset, line)  # "Y"
+        self.lcd.move_screen_area(1, 104, 104, 110, 114, self.LBLX + inset, line)  # "Y"
 
     def say_z(self, inset, line):
-        self.lcd.copy_frame_area(1, 112, 104, 120, 114, self.LBLX + inset, line)  # "Z"
+        self.lcd.move_screen_area(1, 112, 104, 120, 114, self.LBLX + inset, line)  # "Z"
 
     def say_e(self, inset, line):
-        self.lcd.copy_frame_area(1, 237, 119, 244, 129, self.LBLX + inset, line)  # "E"
+        self.lcd.move_screen_area(1, 237, 119, 244, 129, self.LBLX + inset, line)  # "E"
 
     # --------------------------------------------------------------#
     # --------------------------------------------------------------#
@@ -2212,53 +2224,53 @@ class E3V3SE_DISPLAY:
             self.lcd.draw_icon(True, self.ICON, self.icon_print_selected, 12, 51)
             self.lcd.draw_icon(True,self.selected_language, self.icon_TEXT_Print_selected, 13, 120)
             self.lcd.draw_rectangle(0, self.color_white, 12, 51, 112, 165)
-            self.lcd.copy_frame_area(1, 1, 451, 31, 463, 57, 201)
+            # self.lcd.move_screen_area(1, 1, 451, 31, 463, 57, 201)
         else:
             self.lcd.draw_icon(True, self.ICON, self.icon_print, 12, 51)
             self.lcd.draw_icon(True,self.selected_language, self.icon_TEXT_Print, 13, 120)
-            self.lcd.copy_frame_area(1, 1, 423, 31, 435, 57, 201)
+            # self.lcd.move_screen_area(1, 1, 423, 31, 435, 57, 201)
 
     def icon_Prepare(self):
         if self.select_page.now == 1:
             self.lcd.draw_icon(True, self.ICON, self.icon_prepare_selected, 126, 51 )
             self.lcd.draw_icon(True,self.selected_language, self.icon_TEXT_Prepare_selected, 127, 120)
             self.lcd.draw_rectangle(0, self.color_white, 126, 51 , 226, 165)
-            self.lcd.copy_frame_area(1, 33, 451, 82, 466, 175, 201)
+            # self.lcd.move_screen_area(1, 33, 451, 82, 466, 175, 201)
         else:
             self.lcd.draw_icon(True, self.ICON, self.icon_prepare, 126, 51 )
             self.lcd.draw_icon(True,self.selected_language, self.icon_TEXT_Prepare, 127, 120)
-            self.lcd.copy_frame_area(1, 33, 423, 82, 438, 175, 201)
+            # self.lcd.move_screen_area(1, 33, 423, 82, 438, 175, 201)
 
     def icon_Control(self):
         if self.select_page.now == 2:
             self.lcd.draw_icon(True, self.ICON, self.icon_control_selected, 12, 178)
             self.lcd.draw_icon(True,self.selected_language, self.icon_TEXT_Control_selected, 13, 247)
             self.lcd.draw_rectangle(0, self.color_white, 12, 178, 112, 292)
-            self.lcd.copy_frame_area(1, 85, 451, 132, 463, 48, 318)
+            # self.lcd.move_screen_area(1, 85, 451, 132, 463, 48, 318)
         else:
             self.lcd.draw_icon(True, self.ICON, self.icon_control, 12, 178)
             self.lcd.draw_icon(True,self.selected_language, self.icon_TEXT_Control, 13, 247)
-            self.lcd.copy_frame_area(1, 85, 423, 132, 434, 48, 318)
+            # self.lcd.move_screen_area(1, 85, 423, 132, 434, 48, 318)
 
     def icon_Leveling(self, show):
         if show:
             self.lcd.draw_icon(True, self.ICON, self.icon_leveling_selected, 126, 178)
             self.lcd.draw_icon(True,self.selected_language, self.icon_TEXT_Leveling_selected, 126, 247)
             self.lcd.draw_rectangle(0, self.color_white, 126, 178, 226, 292)
-            self.lcd.copy_frame_area(1, 84, 437, 120, 449, 182, 318)
+            # self.lcd.move_screen_area(1, 84, 437, 120, 449, 182, 318)
         else:
             self.lcd.draw_icon(True, self.ICON, self.icon_leveling, 126, 178)
             self.lcd.draw_icon(True,self.selected_language, self.icon_TEXT_Leveling, 126, 247)
-            self.lcd.copy_frame_area(1, 84, 465, 120, 478, 182, 318)
+            # self.lcd.move_screen_area(1, 84, 465, 120, 478, 182, 318)
 
     def icon_StartInfo(self, show):
         if show:
             self.lcd.draw_icon(True, self.ICON, self.icon_Info_1, 145, 246)
             self.lcd.draw_rectangle(0, self.color_white, 126, 178, 226, 292)
-            self.lcd.copy_frame_area(1, 132, 451, 159, 466, 186, 318)
+            # self.lcd.move_screen_area(1, 132, 451, 159, 466, 186, 318)
         else:
             self.lcd.draw_icon(True, self.ICON, self.icon_Info_0, 145, 246)
-            self.lcd.copy_frame_area(1, 132, 423, 159, 435, 186, 318)
+            # self.lcd.move_screen_area(1, 132, 423, 159, 435, 186, 318)
 
     def show_tune(self):
         if (self.select_print.now == 0):
@@ -2278,7 +2290,7 @@ class E3V3SE_DISPLAY:
         else:
             self.lcd.draw_icon(True, self.ICON, self.icon_continue, 86, 191)
             self.lcd.draw_icon(False, self.selected_language, self.icon_TEXT_Pause, 86, 225)
-            self.lcd.copy_frame_area(1, 1, 424, 31, 434, 121, 325)
+            self.lcd.move_screen_area(1, 1, 424, 31, 434, 121, 325)
 
     def show_pause(self):
         if (self.select_print.now == 1):
@@ -2305,33 +2317,33 @@ class E3V3SE_DISPLAY:
         self.Draw_More_Icon(row)
 
     def Item_Prepare_Disable(self, row):
-        self.lcd.copy_frame_area(1, 103, 59, 200, 74, self.LBLX, self.MBASE(row))  # Disable Stepper"
+        self.lcd.move_screen_area(1, 103, 59, 200, 74, self.LBLX, self.MBASE(row))  # Disable Stepper"
         self.Draw_Menu_Line(row, self.icon_close_motor)
 
     def Item_Prepare_Home(self, row):
-        self.lcd.copy_frame_area(1, 202, 61, 271, 71, self.LBLX, self.MBASE(row))  # Auto Home"
+        self.lcd.move_screen_area(1, 202, 61, 271, 71, self.LBLX, self.MBASE(row))  # Auto Home"
         self.Draw_Menu_Line(row, self.icon_homing)
 
     def Item_Prepare_Offset(self, row):
         if self.pd.HAS_BED_PROBE:
-            self.lcd.copy_frame_area(1, 93, 179, 141, 189, self.LBLX, self.MBASE(row))  # "Z-Offset"
-            self.lcd.draw_signed_float(self.lcd.font_8x16, self.color_Bg_Black, 2, 2, 202, self.MBASE(row), self.pd.BABY_Z_VAR * 100)
+            self.lcd.move_screen_area(1, 93, 179, 141, 189, self.LBLX, self.MBASE(row))  # "Z-Offset"
+            self.lcd.draw_signed_float(self.lcd.font_8x16, self.color_background_black, 2, 2, 202, self.MBASE(row), self.pd.BABY_Z_VAR * 100)
         else:
-            self.lcd.copy_frame_area(1, 1, 76, 106, 86, self.LBLX, self.MBASE(row))  # "..."
+            self.lcd.move_screen_area(1, 1, 76, 106, 86, self.LBLX, self.MBASE(row))  # "..."
         self.Draw_Menu_Line(row, self.icon_set_home)
 
     def Item_Prepare_PLA(self, row):
-        self.lcd.copy_frame_area(1, 107, 76, 156, 86, self.LBLX, self.MBASE(row))  # Preheat"
-        self.lcd.copy_frame_area(1, 157, 76, 181, 86, self.LBLX + 52, self.MBASE(row))  # PLA"
+        self.lcd.move_screen_area(1, 107, 76, 156, 86, self.LBLX, self.MBASE(row))  # Preheat"
+        self.lcd.move_screen_area(1, 157, 76, 181, 86, self.LBLX + 52, self.MBASE(row))  # PLA"
         self.Draw_Menu_Line(row, self.icon_preheat_pla)
 
     def Item_Prepare_ABS(self, row):
-        self.lcd.copy_frame_area(1, 107, 76, 156, 86, self.LBLX, self.MBASE(row))  # "Preheat"
-        self.lcd.copy_frame_area(1, 172, 76, 198, 86, self.LBLX + 52, self.MBASE(row))  # "ABS"
+        self.lcd.move_screen_area(1, 107, 76, 156, 86, self.LBLX, self.MBASE(row))  # "Preheat"
+        self.lcd.move_screen_area(1, 172, 76, 198, 86, self.LBLX + 52, self.MBASE(row))  # "ABS"
         self.Draw_Menu_Line(row, self.icon_preheat_abs)
 
     def Item_Prepare_Cool(self, row):
-        self.lcd.copy_frame_area(1, 200, 76, 264, 86, self.LBLX, self.MBASE(row))  # "Cooldown"
+        self.lcd.move_screen_area(1, 200, 76, 264, 86, self.LBLX, self.MBASE(row))  # "Cooldown"
         self.Draw_Menu_Line(row, self.icon_cool)
 
     # --------------------------------------------------------------#
@@ -2355,7 +2367,7 @@ class E3V3SE_DISPLAY:
                 # show percent bar and value
                 self.Draw_Print_ProgressBar(0)
                 # show print done confirm
-                self.lcd.draw_rectangle(1, self.color_Bg_Black, 0, 250, self.lcd.screen_width - 1, self.STATUS_Y)
+                self.lcd.draw_rectangle(1, self.color_background_black, 0, 250, self.lcd.screen_width - 1, self.STATUS_Y)
                 self.lcd.draw_icon(True, self.ICON, self.icon_Confirm_E, 86, 283)
             elif (self.pd.HMI_flag.pause_flag != self.pd.printingIsPaused()):
                 # print status update
@@ -2372,9 +2384,8 @@ class E3V3SE_DISPLAY:
             if self.pd.ishomed():
                 self.CompletedHoming()
 
-        if update:
+        if update and self.checkkey != self.MainMenu:
             self.Draw_Status_Area(update)
-        # self.lcd.UpdateLCD()
 
     def encoder_has_data(self, val):
         if self.checkkey == self.MainMenu:

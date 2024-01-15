@@ -50,9 +50,15 @@ class TJC3224_LCD:
     cmd_reverse_color_area = 0x5C
     cmd_backlight_brightness = 0x5F
     cmd_show_image = 0x70
-    cmd_copy_frame_area = 0x71
+    cmd_move_screen_area = 0x09
     cmd_draw_icon = 0x97
     cmd_draw_text = 0x98
+    
+    # Alias for extra commands
+    direction_up = 0x02
+    direction_down = 0x03
+    
+    
 
     def __init__(self, port, baud_rate):
         """
@@ -356,7 +362,7 @@ class TJC3224_LCD:
         self.word(x)
         self.word(y)
         self.byte(0x00) # font
-        self.byte(0x05 | (show_background * 0x40)) # mode (bshow)
+        self.byte(0x02 | (show_background * 0x40)) # mode (bshow)
         self.byte(size) # size
         self.word(font_color)
         self.word(background_color)
@@ -511,12 +517,16 @@ class TJC3224_LCD:
         self.byte(id)
         self.send()
 
-    def copy_frame_area(self, cacheID, x_start, y_start, x_end, y_end, x_destination, y_destination):
+    def move_screen_area(self, direction, offset, background_color, x_start, y_start, x_end, y_end):
         """
         Copy an area from the virtual display area to the current screen.
 
-        :param cacheID: Virtual area number.
-        :type cacheID: int
+        :param direction: Direction ( 0 = ,1 =, 0x02= top, 0x03 = down)
+        :type direction: int
+        :param offset: How many pixels the copied area is going to be moved.
+        :type offset: int
+        :param offset: Color of background (to fill the previously moved area?).
+        :type offset: int
         :param x_start: X-coordinate of the upper-left corner of the virtual area.
         :type x_start: int
         :param y_start: Y-coordinate of the upper-left corner of the virtual area.
@@ -525,21 +535,16 @@ class TJC3224_LCD:
         :type x_end: int
         :param y_end: Y-coordinate of the lower-right corner of the virtual area.
         :type y_end: int
-        :param x_destination: X-coordinate of the screen paste point.
-        :type x_destination: int
-        :param y_destination: Y-coordinate of the screen paste point.
-        :type y_destination: int
         """
-        self.byte(self.cmd_copy_frame_area)
-        self.byte(0x80 | cacheID)
+        self.byte(self.cmd_move_screen_area)
+        self.byte(0x80 | direction)
+        self.word(offset)
+        self.word(background_color)
         self.word(x_start)
         self.word(y_start)
         self.word(x_end)
         self.word(y_end)
-        self.word(x_destination)
-        self.word(y_destination)
         self.send()
-
 
 
 
