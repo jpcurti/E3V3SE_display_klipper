@@ -274,12 +274,12 @@ class E3V3SE_DISPLAY:
     icon_TempTooHigh = 81
     icon_NoTips_C = 82
     icon_NoTips_E = 83
-    show_continue_C = 84
-    show_continue_E = 85
-    icon_Cancel_C = 86
-    icon_Cancel_E = 87
-    icon_Confirm_C = 88
-    icon_Confirm_E = 89
+    icon_continue_button = 96
+    icon_continue_button_hovered = 96
+    icon_cancel_button = 72
+    icon_cancel_button_hovered = 72
+    icon_confirm_button = 73
+    icon_confim_button_hovered = 73
     icon_Info_0 = 90
     icon_Info_1 = 91
     
@@ -303,6 +303,19 @@ class E3V3SE_DISPLAY:
     icon_TEXT_header_info = 61
     icon_TEXT_header_PLA_settings = 62
     icon_TEXT_header_TPU_settings = 64
+    
+    
+    icon_popup_nozzle_temp_too_high = 71 
+    icon_popup_nozzle_temp_too_low = 69 
+    icon_popup_bed_temp_too_low = 140
+    icon_popup_bed_temp_too_high = 141
+    icon_popup_unexpected_stoppage = 70 
+    icon_popup_filament_reloaded = 67
+    icon_popup_filament_runout = 68 
+    icon_popup_pause_print = 76
+    icon_popup_stop_print = 77
+    icon_popup_homing = 84
+    
     
     icon_TEXT_Print = 2
     icon_TEXT_Print_selected = 8
@@ -633,117 +646,120 @@ class E3V3SE_DISPLAY:
         # self.lcd.UpdateLCD()
 
     def HMI_Prepare(self):
-        encoder_diffState = self.get_encoder_state()
-        if (encoder_diffState == self.ENCODER_DIFF_NO):
-            return
+        print("TODO: prepare is not implemented!")
+        self.Goto_MainMenu()
+        # encoder_diffState = self.get_encoder_state()
+        # if (encoder_diffState == self.ENCODER_DIFF_NO):
+        #     return
 
-        if (encoder_diffState == self.ENCODER_DIFF_CW):
-            if (self.select_prepare.inc(1 + self.PREPARE_CASE_TOTAL)):
-                if (self.select_prepare.now > self.MROWS and self.select_prepare.now > self.index_prepare):
-                    self.index_prepare = self.select_prepare.now
+        # if (encoder_diffState == self.ENCODER_DIFF_CW):
+        #     if (self.select_prepare.inc(1 + self.PREPARE_CASE_TOTAL)):
+        #         if (self.select_prepare.now > self.MROWS and self.select_prepare.now > self.index_prepare):
+        #             self.index_prepare = self.select_prepare.now
 
-                    # Scroll up and draw a blank bottom line
-                    self.Scroll_Menu(self.scroll_up)
-                    self.Draw_Menu_Icon(self.MROWS, self.icon_axis + self.select_prepare.now - 1)
+        #             # Scroll up and draw a blank bottom line
+        #             self.Scroll_Menu(self.scroll_up)
+        #             self.Draw_Menu_Icon(self.MROWS, self.icon_axis + self.select_prepare.now - 1)
 
-                    # Draw "More" icon for sub-menus
-                    if (self.index_prepare < 7):
-                        self.Draw_More_Icon(self.MROWS - self.index_prepare + 1)
+        #             # Draw "More" icon for sub-menus
+        #             if (self.index_prepare < 7):
+        #                 self.Draw_More_Icon(self.MROWS - self.index_prepare + 1)
 
-                    if self.pd.HAS_HOTEND:
-                        if (self.index_prepare == self.PREPARE_CASE_ABS):
-                            self.Item_Prepare_ABS(self.MROWS)
-                    if self.pd.HAS_PREHEAT:
-                        if (self.index_prepare == self.PREPARE_CASE_COOL):
-                            self.Item_Prepare_Cool(self.MROWS)
-                else:
-                    self.Move_Highlight(1, self.select_prepare.now + self.MROWS - self.index_prepare)
+        #             if self.pd.HAS_HOTEND:
+        #                 if (self.index_prepare == self.PREPARE_CASE_ABS):
+        #                     self.Item_Prepare_ABS(self.MROWS)
+        #             if self.pd.HAS_PREHEAT:
+        #                 if (self.index_prepare == self.PREPARE_CASE_COOL):
+        #                     self.Item_Prepare_Cool(self.MROWS)
+        #         else:
+        #             self.Move_Highlight(1, self.select_prepare.now + self.MROWS - self.index_prepare)
 
-        elif (encoder_diffState == self.ENCODER_DIFF_CCW):
-            if (self.select_prepare.dec()):
-                if (self.select_prepare.now < self.index_prepare - self.MROWS):
-                    self.index_prepare -= 1
-                    self.Scroll_Menu(self.scroll_down)
+        # elif (encoder_diffState == self.ENCODER_DIFF_CCW):
+        #     if (self.select_prepare.dec()):
+        #         if (self.select_prepare.now < self.index_prepare - self.MROWS):
+        #             self.index_prepare -= 1
+        #             self.Scroll_Menu(self.scroll_down)
 
-                    if (self.index_prepare == self.MROWS):
-                        self.Draw_Back_First()
-                    else:
-                        self.Draw_Menu_Line(0, self.icon_axis + self.select_prepare.now - 1)
+        #             if (self.index_prepare == self.MROWS):
+        #                 self.Draw_Back_First()
+        #             else:
+        #                 self.Draw_Menu_Line(0, self.icon_axis + self.select_prepare.now - 1)
 
-                    if (self.index_prepare < 7):
-                        self.Draw_More_Icon(self.MROWS - self.index_prepare + 1)
+        #             if (self.index_prepare < 7):
+        #                 self.Draw_More_Icon(self.MROWS - self.index_prepare + 1)
 
-                    if (self.index_prepare == 6):
-                        self.Item_Prepare_Move(0)
-                    elif (self.index_prepare == 7):
-                        self.Item_Prepare_Disable(0)
-                    elif (self.index_prepare == 8):
-                        self.Item_Prepare_Home(0)
-                else:
-                    self.Move_Highlight(-1, self.select_prepare.now + self.MROWS - self.index_prepare)
+        #             if (self.index_prepare == 6):
+        #                 self.Item_Prepare_Move(0)
+        #             elif (self.index_prepare == 7):
+        #                 self.Item_Prepare_Disable(0)
+        #             elif (self.index_prepare == 8):
+        #                 self.Item_Prepare_Home(0)
+        #         else:
+        #             self.Move_Highlight(-1, self.select_prepare.now + self.MROWS - self.index_prepare)
 
-        elif (encoder_diffState == self.ENCODER_DIFF_ENTER):
-            if (self.select_prepare.now == 0):  # Back
-                self.select_page.set(1)
-                self.Goto_MainMenu()
+        # elif (encoder_diffState == self.ENCODER_DIFF_ENTER):
+        #     if (self.select_prepare.now == 0):  # Back
+        #         self.select_page.set(1)
+        #         self.Goto_MainMenu()
 
-            elif self.select_prepare.now == self.PREPARE_CASE_MOVE:  # Axis move
-                self.checkkey = self.AxisMove
-                self.select_axis.reset()
-                self.Draw_Move_Menu()
-                self.lcd.draw_float_value(
-                    True, True, 0, self.lcd.font_8x16, self.color_white, self.color_background_black,
-                    3, 1, 216, self.MBASE(1), self.pd.current_position.x * self.MINUNITMULT
-                )
-                self.lcd.draw_float_value(
-                    True, True, 0, self.lcd.font_8x16, self.color_white, self.color_background_black,
-                    3, 1, 216, self.MBASE(2), self.pd.current_position.y * self.MINUNITMULT
-                )
-                self.lcd.draw_float_value(
-                    True, True, 0, self.lcd.font_8x16, self.color_white, self.color_background_black,
-                    3, 1, 216, self.MBASE(3), self.pd.current_position.z * self.MINUNITMULT
-                )
-                self.pd.sendGCode("G92 E0")
-                self.pd.current_position.e = self.pd.HMI_ValueStruct.Move_E_scale = 0
-                self.lcd.draw_signed_float(self.lcd.font_8x16, self.color_background_black, 3, 1, 216, self.MBASE(4), 0)
-            elif self.select_prepare.now == self.PREPARE_CASE_DISA:  # Disable steppers
-                self.pd.sendGCode("M84")
-            elif self.select_prepare.now == self.PREPARE_CASE_HOME:  # Homing
-                self.checkkey = self.Last_Prepare
-                self.index_prepare = self.MROWS
-                self.pd.current_position.homing()
-                self.pd.HMI_flag.home_flag = True
-                self.Popup_Window_Home()
-                self.pd.sendGCode("G28")
-            elif self.select_prepare.now == self.PREPARE_CASE_ZOFF:  # Z-offset
-                self.checkkey = self.Homeoffset
-                if self.pd.HAS_BED_PROBE:
-                    self.pd.probe_calibrate()
+        #     elif self.select_prepare.now == self.PREPARE_CASE_MOVE:  # Axis move
+        #         self.checkkey = self.AxisMove
+        #         self.select_axis.reset()
+        #         self.Draw_Move_Menu()
+        #         self.lcd.draw_float_value(
+        #             True, True, 0, self.lcd.font_8x16, self.color_white, self.color_background_black,
+        #             3, 1, 216, self.MBASE(1), self.pd.current_position.x * self.MINUNITMULT
+        #         )
+        #         self.lcd.draw_float_value(
+        #             True, True, 0, self.lcd.font_8x16, self.color_white, self.color_background_black,
+        #             3, 1, 216, self.MBASE(2), self.pd.current_position.y * self.MINUNITMULT
+        #         )
+        #         self.lcd.draw_float_value(
+        #             True, True, 0, self.lcd.font_8x16, self.color_white, self.color_background_black,
+        #             3, 1, 216, self.MBASE(3), self.pd.current_position.z * self.MINUNITMULT
+        #         )
+        #         self.pd.sendGCode("G92 E0")
+        #         self.pd.current_position.e = self.pd.HMI_ValueStruct.Move_E_scale = 0
+        #         self.lcd.draw_signed_float(True, self.lcd.font_8x16, self.color_background_black, 3, 1, 216, self.MBASE(4), 0)
+        #     elif self.select_prepare.now == self.PREPARE_CASE_DISA:  # Disable steppers
+        #         self.pd.sendGCode("M84")
+        #     elif self.select_prepare.now == self.PREPARE_CASE_HOME:  # Homing
+        #         self.checkkey = self.Last_Prepare
+        #         self.index_prepare = self.MROWS
+        #         self.pd.current_position.homing()
+        #         self.pd.HMI_flag.home_flag = True
+        #         self.Popup_Window_Home()
+        #         self.pd.sendGCode("G28")
+        #     elif self.select_prepare.now == self.PREPARE_CASE_ZOFF:  # Z-offset
+        #         self.checkkey = self.Homeoffset
+        #         if self.pd.HAS_BED_PROBE:
+        #             self.pd.probe_calibrate()
 
-                self.pd.HMI_ValueStruct.show_mode = -4
+        #         self.pd.HMI_ValueStruct.show_mode = -4
 
-                self.lcd.draw_signed_float(
-                    self.lcd.font_8x16, self.Selected_color, 2, 2, 202,
-                    self.MBASE(self.PREPARE_CASE_ZOFF + self.MROWS - self.index_prepare),
-                    self.pd.HMI_ValueStruct.offset_value
-                )
-                self.EncoderRateLimit = False
+        #         self.lcd.draw_signed_float(True, 
+        #             self.lcd.font_8x16, self.Selected_color, 2, 3, 175,
+        #             self.MBASE(self.PREPARE_CASE_ZOFF + self.MROWS - self.index_prepare)-10,
+        #             self.pd.HMI_ValueStruct.offset_value
+        #         )
+            
+        #         self.EncoderRateLimit = False
 
-            elif self.select_prepare.now == self.PREPARE_CASE_PLA:  # PLA preheat
-                self.pd.preheat("PLA")
+        #     elif self.select_prepare.now == self.PREPARE_CASE_PLA:  # PLA preheat
+        #         self.pd.preheat("PLA")
 
-            elif self.select_prepare.now == self.PREPARE_CASE_ABS:  # ABS preheat
-                self.pd.preheat("ABS")
+        #     elif self.select_prepare.now == self.PREPARE_CASE_ABS:  # ABS preheat
+        #         self.pd.preheat("ABS")
 
-            elif self.select_prepare.now == self.PREPARE_CASE_COOL:  # Cool
-                if self.pd.HAS_FAN:
-                    self.pd.zero_fan_speeds()
-                self.pd.disable_all_heaters()
+        #     elif self.select_prepare.now == self.PREPARE_CASE_COOL:  # Cool
+        #         if self.pd.HAS_FAN:
+        #             self.pd.zero_fan_speeds()
+        #         self.pd.disable_all_heaters()
 
-            elif self.select_prepare.now == self.PREPARE_CASE_LANG:  # Toggle Language
-                self.HMI_ToggleLanguage()
-                self.Draw_Prepare_Menu()
-        # self.lcd.UpdateLCD()
+        #     elif self.select_prepare.now == self.PREPARE_CASE_LANG:  # Toggle Language
+        #         self.HMI_ToggleLanguage()
+        #         self.Draw_Prepare_Menu()
+        
 
     def HMI_Control(self):
         encoder_diffState = self.get_encoder_state()
@@ -797,7 +813,8 @@ class E3V3SE_DISPLAY:
 
     #TODO: HMI for leveling
     def HMI_Leveling(self):
-        print("TODO: leveling HMI") 
+        print("TODO: leveling not implemented!")
+        self.Goto_MainMenu() 
         
     def HMI_Info(self):
         encoder_diffState = self.get_encoder_state()
@@ -931,15 +948,15 @@ class E3V3SE_DISPLAY:
                 self.pd.HMI_ValueStruct.print_speed = self.pd.feedrate_percentage
                 self.lcd.draw_int_value(
                     True, True, 0, self.lcd.font_8x16, self.color_white, self.Selected_color,
-                    3, 200, self.MBASE(self.TUNE_CASE_SPEED  - 8+ self.MROWS - self.index_tune),
+                    3, 200, self.MBASE(self.TUNE_CASE_SPEED + self.MROWS - self.index_tune)-8,
                     self.pd.feedrate_percentage
                 )
                 self.EncoderRateLimit = False
             elif self.select_tune.now == self.TUNE_CASE_ZOFF:   #z offset
                 self.checkkey = self.Homeoffset
-                self.lcd.draw_signed_float(
-                    self.lcd.font_8x16, self.Selected_color, 2, 2, 202,
-                    self.MBASE(self.TUNE_CASE_ZOFF + self.MROWS - self.index_tune),
+                self.lcd.draw_signed_float(True, 
+                    self.lcd.font_8x16, self.Selected_color, 2, 3, 175,
+                    self.MBASE(self.TUNE_CASE_ZOFF)-10,
                     self.pd.HMI_ValueStruct.offset_value
                 )
 
@@ -994,7 +1011,7 @@ class E3V3SE_DISPLAY:
                         3, 1, 216, self.MBASE(3),
                         self.pd.HMI_ValueStruct.Move_Z_scale
                     )
-                    self.lcd.draw_signed_float(
+                    self.lcd.draw_signed_float(True, 
                         self.lcd.font_8x16, self.color_background_black, 3, 1, 216, self.MBASE(4), 0
                     )
                     # self.lcd.UpdateLCD()
@@ -1050,7 +1067,7 @@ class E3V3SE_DISPLAY:
                         return
                 self.checkkey = self.Extruder
                 self.pd.HMI_ValueStruct.Move_E_scale = self.pd.current_position.e * self.MINUNITMULT
-                self.lcd.draw_signed_float(
+                self.lcd.draw_signed_float(True, 
                     self.lcd.font_8x16, self.Selected_color, 3, 1, 216, self.MBASE(4),
                     self.pd.HMI_ValueStruct.Move_E_scale
                 )
@@ -1164,7 +1181,7 @@ class E3V3SE_DISPLAY:
             self.checkkey = self.AxisMove
             self.EncoderRateLimit = True
             self.pd.last_E_scale = self.pd.HMI_ValueStruct.Move_E_scale
-            self.lcd.draw_signed_float(
+            self.lcd.draw_signed_float(True, 
                 self.lcd.font_8x16, self.color_background_black, 3, 1, 216,
                 self.MBASE(4), self.pd.HMI_ValueStruct.Move_E_scale
             )
@@ -1180,7 +1197,7 @@ class E3V3SE_DISPLAY:
         elif ((self.pd.last_E_scale - self.pd.HMI_ValueStruct.Move_E_scale) > (self.pd.EXTRUDE_MAXLENGTH) * self.MINUNITMULT):
             self.pd.HMI_ValueStruct.Move_E_scale = self.pd.last_E_scale - (self.pd.EXTRUDE_MAXLENGTH) * self.MINUNITMULT
         self.pd.current_position.e = self.pd.HMI_ValueStruct.Move_E_scale / 10
-        self.lcd.draw_signed_float(self.lcd.font_8x16, self.Selected_color, 3, 1, 216, self.MBASE(4), self.pd.HMI_ValueStruct.Move_E_scale)
+        self.lcd.draw_signed_float(True, self.lcd.font_8x16, self.Selected_color, 3, 1, 216, self.MBASE(4), self.pd.HMI_ValueStruct.Move_E_scale)
         # self.lcd.UpdateLCD()
 
     def HMI_Temperature(self):
@@ -1565,9 +1582,9 @@ class E3V3SE_DISPLAY:
             return
         zoff_line = 0
         if self.pd.HMI_ValueStruct.show_mode == -4:
-            zoff_line = self.PREPARE_CASE_ZOFF + self.MROWS - self.index_prepare
+            zoff_line = self.PREPARE_CASE_ZOFF + self.MROWS - self.index_prepare 
         else:
-            zoff_line = self.TUNE_CASE_ZOFF + self.MROWS - self.index_tune
+            zoff_line = self.TUNE_CASE_ZOFF + self.MROWS - self.index_tune 
 
         if (encoder_diffState == self.ENCODER_DIFF_ENTER): #if (applyencoder(encoder_diffstate, offset_value))
             self.EncoderRateLimit = True
@@ -1577,8 +1594,8 @@ class E3V3SE_DISPLAY:
                 self.pd.setZOffset(self.dwin_zoffset) # manually set
 
             self.checkkey = self.Prepare if self.pd.HMI_ValueStruct.show_mode == -4 else self.Tune
-            self.lcd.draw_signed_float(
-                self.lcd.font_8x16, self.color_background_black, 2, 2, 202, self.MBASE(zoff_line),
+            self.lcd.draw_signed_float(True, 
+                self.lcd.font_8x16, self.color_background_black, 2, 3, 175, self.MBASE(zoff_line)-10,
                 self.pd.HMI_ValueStruct.offset_value
             )
 
@@ -1600,9 +1617,9 @@ class E3V3SE_DISPLAY:
         if self.pd.HAS_BED_PROBE:
             self.pd.add_mm('Z', self.dwin_zoffset - self.last_zoffset)
 
-        self.lcd.draw_signed_float(
-            self.lcd.font_8x16, self.Selected_color, 2, 2, 202,
-            self.MBASE(zoff_line),
+        self.lcd.draw_signed_float(True, 
+            self.lcd.font_8x16, self.Selected_color, 2, 3, 175,
+            self.MBASE(zoff_line)-10,
             self.pd.HMI_ValueStruct.offset_value
         )
         # self.lcd.UpdateLCD()
@@ -1734,7 +1751,7 @@ class E3V3SE_DISPLAY:
 
         #Z offset area
         self.lcd.draw_icon(True, self.ICON, self.icon_z_offset, 165, 294)
-        self.lcd.draw_signed_float(self.lcd.font_8x8, self.color_background_black, 1, 3, 191, 300, self.pd.BABY_Z_VAR * 100)
+        self.lcd.draw_signed_float(True, self.lcd.font_8x8, self.color_background_black, 1, 3, 191, 300, self.pd.BABY_Z_VAR * 100)
         
         if with_update:
             time.sleep(.005)
@@ -1743,7 +1760,7 @@ class E3V3SE_DISPLAY:
         self.lcd.draw_string(False, self.lcd.font_12x24, self.color_white, self.color_background_grey, 14, 4, title)
 
     def Draw_Popup_Bkgd_105(self):
-        self.lcd.draw_rectangle(1, self.color_popup_background, 6, self.HEADER_HEIGHT + 6, self.lcd.width - 6, self.STATUS_Y+ 78)
+        self.lcd.draw_rectangle(1, self.color_popup_background, 6, self.HEADER_HEIGHT + 6, self.lcd.screen_width - 6, self.STATUS_Y+ 78)
 
     def Draw_More_Icon(self, line):
         self.lcd.draw_icon(True, self.ICON, self.icon_more, 206, self.MBASE(line) - 14)
@@ -1818,13 +1835,11 @@ class E3V3SE_DISPLAY:
         else:
             c1 = self.color_popup_background
             c2 = self.Selected_color
-        self.lcd.draw_rectangle(0, c1, 25, 279, 126, 318)
-        self.lcd.draw_rectangle(0, c1, 24, 278, 127, 319)
-        self.lcd.draw_rectangle(0, c2, 145, 279, 246, 318)
-        self.lcd.draw_rectangle(0, c2, 144, 278, 247, 319)
+        self.lcd.draw_rectangle(0, c1, 30, 154, 111, 185)
+        self.lcd.draw_rectangle(0, c2, 129, 154, 211, 186)
 
     def Draw_Popup_Bkgd_60(self):
-        self.lcd.draw_rectangle(1, self.color_popup_background, 14, 60, 258, 330)
+        self.lcd.draw_rectangle(1, self.color_popup_background, 10, self.HEADER_HEIGHT + 10, self.lcd.screen_width - 10, self.STATUS_Y -10)
 
     def Draw_Printing_Screen(self):
         # Tune
@@ -2008,8 +2023,8 @@ class E3V3SE_DISPLAY:
              )
         if self.pd.HAS_ZOFFSET_ITEM:
              self.Draw_Menu_Line_With_Only_Icons(self.TUNE_CASE_ZOFF, self.icon_z_offset , self.icon_TEXT_Z_Offset)
-             self.lcd.draw_signed_float(
-                 self.lcd.font_8x16, self.color_background_black, 2, 2, 202, self.MBASE(self.TUNE_CASE_ZOFF), self.pd.BABY_Z_VAR * 100
+             self.lcd.draw_signed_float(True, 
+                 self.lcd.font_8x16, self.color_background_black, 2, 3, 175, self.MBASE(self.TUNE_CASE_ZOFF)-10, self.pd.BABY_Z_VAR * 100
              )
 
     def Draw_Temperature_Menu(self):
@@ -2173,27 +2188,22 @@ class E3V3SE_DISPLAY:
 
     def Popup_window_PauseOrStop(self):
         self.Clear_Main_Window()
-        self.Draw_Popup_Bkgd_60()
+        # self.Draw_Popup_Bkgd_60()
+
         if(self.select_print.now == 1):
-            self.lcd.draw_string(
-                False, True, self.lcd.font_8x16, self.lcd.Popup_Text_Color, self.color_popup_background,
-                (272 - 8 * 11) / 2, 150,
-                self.MSG_PAUSE_PRINT
-            )
+            self.lcd.draw_icon(True, self.selected_language, self.icon_popup_pause_print, 15, self.HEADER_HEIGHT + 50)
+
         elif (self.select_print.now == 2):
-            self.lcd.draw_string(
-                False, True, self.lcd.font_8x16, self.lcd.Popup_Text_Color, self.color_popup_background,
-                (272 - 8 * 10) / 2, 150,
-                self.MSG_STOP_PRINT
-            )
-        self.lcd.draw_icon(True, self.ICON, self.icon_Confirm_E, 26, 280)
-        self.lcd.draw_icon(True, self.ICON, self.icon_Cancel_E, 146, 280)
+            self.lcd.draw_icon(True, self.selected_language, self.icon_popup_stop_print, 15, self.HEADER_HEIGHT + 50)
+        self.lcd.draw_rectangle(0,self.color_white, 15, self.HEADER_HEIGHT + 50, 225, 195)
+        self.lcd.draw_icon(True, self.selected_language, self.icon_confim_button_hovered, 30, self.HEADER_HEIGHT + 130)
+        self.lcd.draw_icon(True, self.selected_language, self.icon_cancel_button_hovered, 130, self.HEADER_HEIGHT + 130)
         self.Draw_Select_Highlight(True)
 
     def Popup_Window_Home(self, parking=False):
         self.Clear_Main_Window()
-        self.Draw_Popup_Bkgd_60()
-        self.lcd.draw_icon(True, self.ICON, self.icon_BLTouch, 101, 105)
+        # self.Draw_Popup_Bkgd_60()
+        self.lcd.draw_icon(True, self.selected_language, self.icon_popup_homing, 10, self.HEADER_HEIGHT + 10)
         if parking:
             self.lcd.draw_string(
                 False, True, self.lcd.font_8x16, self.lcd.Popup_Text_Color, self.color_popup_background,
@@ -2210,13 +2220,13 @@ class E3V3SE_DISPLAY:
     def Popup_Window_ETempTooLow(self):
         self.Clear_Main_Window()
         self.Draw_Popup_Bkgd_60()
-        self.lcd.draw_icon(True, self.ICON, self.icon_TempTooLow, 102, 105)
+        self.lcd.draw_icon(True, self.selected_language, self.icon_TempTooLow, 10, self.HEADER_HEIGHT + 10)
         self.lcd.draw_string(
             False, True, self.lcd.font_8x16, self.lcd.Popup_Text_Color,
             self.color_popup_background, 20, 235,
             "Nozzle is too cold"
         )
-        self.lcd.draw_icon(True, self.ICON, self.icon_Confirm_E, 86, 280)
+        self.lcd.draw_icon(True, self.ICON, self.icon_confim_button_hovered, 86, 280)
 
     def Erase_Menu_Cursor(self, line):
         self.lcd.draw_rectangle(1, self.color_background_black, 0, self.MBASE(line) - 18, 14, self.MBASE(line + 1) - 20)
@@ -2392,7 +2402,8 @@ class E3V3SE_DISPLAY:
     def Item_Prepare_Offset(self, row):
         if self.pd.HAS_BED_PROBE:
             self.lcd.move_screen_area(1, 93, 179, 141, 189, self.LBLX, self.MBASE(row))  # "Z-Offset"
-            self.lcd.draw_signed_float(self.lcd.font_8x16, self.color_background_black, 2, 2, 202, self.MBASE(row), self.pd.BABY_Z_VAR * 100)
+
+            self.lcd.draw_signed_float(True, self.lcd.font_8x16, self.color_background_black, 2, 3, 175, self.MBASE(row), self.pd.BABY_Z_VAR * 100)
         else:
             self.lcd.move_screen_area(1, 1, 76, 106, 86, self.LBLX, self.MBASE(row))  # "..."
         self.Draw_Menu_Line(row, self.icon_set_home)
@@ -2431,7 +2442,7 @@ class E3V3SE_DISPLAY:
                 self.Draw_Print_ProgressBar(0)
                 # show print done confirm
                 self.lcd.draw_rectangle(1, self.color_background_black, 0, 250, self.lcd.screen_width - 1, self.STATUS_Y)
-                self.lcd.draw_icon(True, self.ICON, self.icon_Confirm_E, 86, 283)
+                self.lcd.draw_icon(True, self.ICON, self.icon_confim_button_hovered, 86, 283)
             elif (self.pd.HMI_flag.pause_flag != self.pd.printingIsPaused()):
                 # print status update
                 self.pd.HMI_flag.pause_flag = self.pd.printingIsPaused()

@@ -453,7 +453,7 @@ class TJC3224_LCD:
         self.long(value)
         self.send()
 
-    def draw_signed_float(self, size, background_color, iNum, fNum, x, y, value):
+    def draw_signed_float(self, show_background, size, background_color, iNum, fNum, x, y, value):
         """
         Draw a signed floating-point number on the screen.
 
@@ -473,11 +473,11 @@ class TJC3224_LCD:
         :type value: float
         """
         if value < 0:
-            self.draw_string(False,  size, self.color_white, background_color, x - 6, y, "-")
-            self.draw_float_value(False, False, 0, size, self.color_white, background_color, iNum, fNum, x, y, -value)
+            self.draw_string(show_background,  size, self.color_white, background_color, x - 6, y-3, "-")
+            self.draw_float_value(show_background, False, 0, size, self.color_white, background_color, iNum, fNum, x, y, -value)
         else:
-            self.draw_string(False,  size, self.color_white, background_color, x - 6, y, " ")
-            self.draw_float_value(False, False, 0, size, self.color_white, background_color, iNum, fNum, x, y, value)
+            self.draw_string(show_background,  size, self.color_white, background_color, x - 6, y-3, " ")
+            self.draw_float_value(show_background, False, 0, size, self.color_white, background_color, iNum, fNum, x, y, value)
 
     def draw_icon(self, show_background, libID, picID, x, y):
             """
