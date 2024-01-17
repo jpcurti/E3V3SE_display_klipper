@@ -247,7 +247,7 @@ class PrinterData:
 	files = None
 	MACHINE_SIZE = "220x220x250"
 	SHORT_BUILD_VERSION = "1.00"
-	CORP_WEBSITE_E = "https://www.klipper3d.org/"
+	CORP_WEBSITE_E = "www.klipper3d.org"
 
 	def __init__(self, API_Key, Klipper_Socket, URL='127.0.0.1'):
 		self.op = MoonrakerSocket(URL, 80, API_Key)

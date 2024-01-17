@@ -301,8 +301,8 @@ class E3V3SE_DISPLAY:
     icon_TEXT_header_max_speed = 88
     icon_TEXT_header_language_selection = 106
     icon_TEXT_header_info = 61
-    icon_TEXT_PLA_settings = 62
-    icon_TEXT_TPU_settings = 64
+    icon_TEXT_header_PLA_settings = 62
+    icon_TEXT_header_TPU_settings = 64
     
     icon_TEXT_Print = 2
     icon_TEXT_Print_selected = 8
@@ -368,6 +368,9 @@ class E3V3SE_DISPLAY:
     icon_TEXT_max_acceleration_y = 113
     icon_TEXT_max_acceleration_z = 114
     icon_TEXT_max_acceleration_e = 115
+    icon_TEXT_hardware_version = 156
+    icon_TEXT_bed_size = 59
+    icon_TEXT_contact = 60
     
     
     icon_text_printing_time = 18
@@ -1230,19 +1233,8 @@ class E3V3SE_DISPLAY:
                 self.pd.HMI_ValueStruct.show_mode = -2
 
                 self.Clear_Main_Window()
-                # self.Frame_TitleCopy(1, 56, 16, 141, 28)  # "PLA Settings"
-                # self.lcd.move_screen_area(1, 157, 76, 181, 86, self.LBLX, self.MBASE(self.PREHEAT_CASE_TEMP))
-                # self.lcd.move_screen_area(1, 197, 104, 238, 114, self.LBLX + 27, self.MBASE(self.PREHEAT_CASE_TEMP))
-                # self.lcd.move_screen_area(1, 1, 89, 83, 101, self.LBLX + 71, self.MBASE(self.PREHEAT_CASE_TEMP))  # PLA nozzle temp
-                # if self.pd.HAS_HEATED_BED:
-                #     self.lcd.move_screen_area(1, 157, 76, 181, 86, self.LBLX, self.MBASE(self.PREHEAT_CASE_BED) + 3)
-                #     self.lcd.move_screen_area(1, 240, 104, 264, 114, self.LBLX + 27, self.MBASE(self.PREHEAT_CASE_BED) + 3)
-                #     self.lcd.move_screen_area(1, 1, 89, 83, 101, self.LBLX + 54, self.MBASE(self.PREHEAT_CASE_BED) + 3)  # PLA bed temp
-                # if self.pd.HAS_FAN:
-                #     self.lcd.move_screen_area(1, 157, 76, 181, 86, self.LBLX, self.MBASE(self.PREHEAT_CASE_FAN))
-                #     self.lcd.move_screen_area(1, 0, 119, 64, 132, self.LBLX + 27, self.MBASE(self.PREHEAT_CASE_FAN))  # PLA fan speed
+                self.lcd.draw_icon(False,self.selected_language,self.icon_TEXT_header_PLA_settings, self.HEADER_HEIGHT, 1)
 
-                # self.lcd.move_screen_area(1, 97, 165, 229, 177, self.LBLX, self.MBASE(self.PREHEAT_CASE_SAVE))  # Save PLA configuration
 
                 self.Draw_Back_First()
                 i = 1
@@ -1275,20 +1267,8 @@ class E3V3SE_DISPLAY:
                 self.select_ABS.reset()
                 self.pd.HMI_ValueStruct.show_mode = -3
                 self.Clear_Main_Window()
-                # self.Frame_TitleCopy(1, 56, 16, 141, 28)  # "ABS Settings"
-                # self.lcd.move_screen_area(1, 172, 76, 198, 86, self.LBLX, self.MBASE(self.PREHEAT_CASE_TEMP))
-                # self.lcd.move_screen_area(1, 197, 104, 238, 114, self.LBLX + 27, self.MBASE(self.PREHEAT_CASE_TEMP))
-                # self.lcd.move_screen_area(1, 1, 89, 83, 101, self.LBLX + 71, self.MBASE(self.PREHEAT_CASE_TEMP))  # ABS nozzle temp
-                # if self.pd.HAS_HEATED_BED:
-                #     self.lcd.move_screen_area(1, 172, 76, 198, 86, self.LBLX, self.MBASE(self.PREHEAT_CASE_BED) + 3)
-                #     self.lcd.move_screen_area(1, 240, 104, 264, 114, self.LBLX + 27, self.MBASE(self.PREHEAT_CASE_BED) + 3)
-                #     self.lcd.move_screen_area(1, 1, 89, 83, 101, self.LBLX + 54, self.MBASE(self.PREHEAT_CASE_BED) + 3)  # ABS bed temp
-                # if self.pd.HAS_FAN:
-                #     self.lcd.move_screen_area(1, 172, 76, 198, 86, self.LBLX, self.MBASE(self.PREHEAT_CASE_FAN))
-                #     self.lcd.move_screen_area(1, 0, 119, 64, 132, self.LBLX + 27, self.MBASE(self.PREHEAT_CASE_FAN))  # ABS fan speed
+                self.lcd.draw_icon(False,self.selected_language,self.icon_TEXT_header_TPU_settings, self.HEADER_HEIGHT, 1)
 
-                # self.lcd.move_screen_area(1, 97, 165, 229, 177, self.LBLX, self.MBASE(self.PREHEAT_CASE_SAVE))
-                # self.lcd.move_screen_area(1, 172, 76, 198, 86, self.LBLX + 33, self.MBASE(self.PREHEAT_CASE_SAVE))  # Save ABS configuration
 
                 self.Draw_Back_First()
                 i = 1
@@ -1317,7 +1297,7 @@ class E3V3SE_DISPLAY:
                 i += 1
                 self.Draw_Menu_Line_With_Only_Icons(i, self.icon_write_eeprom, self.icon_TEXT_save_tpu_parameters)  # Save TPU configuration
 
-        # self.lcd.UpdateLCD()
+
 
     def HMI_PLAPreheatSetting(self):
         encoder_diffState = self.get_encoder_state()
@@ -1762,7 +1742,7 @@ class E3V3SE_DISPLAY:
         self.lcd.draw_string(False, self.lcd.font_12x24, self.color_white, self.color_background_grey, 14, 4, title)
 
     def Draw_Popup_Bkgd_105(self):
-        self.lcd.draw_rectangle(1, self.color_popup_background, 12, 105, 258, 374)
+        self.lcd.draw_rectangle(1, self.color_popup_background, 6, self.HEADER_HEIGHT + 6, self.lcd.width - 6, self.STATUS_Y+ 78)
 
     def Draw_More_Icon(self, line):
         self.lcd.draw_icon(True, self.ICON, self.icon_more, 206, self.MBASE(line) - 14)
@@ -1784,13 +1764,14 @@ class E3V3SE_DISPLAY:
             self.Draw_Menu_Icon(line, icon)
         self.lcd.draw_line(self.color_line, 15, self.MBASE(line + 1) - 22, 235,  self.MBASE(line + 1) - 22)
         
-    def Draw_Menu_Line_With_Only_Icons(self, line, icon_left=False, text_icon=False):
+    def Draw_Menu_Line_With_Only_Icons(self, line, icon_left=False, text_icon=False, dividing_line=True):
         if icon_left:
             self.Draw_Menu_Icon(line, icon_left)
         if text_icon:
             self.lcd.draw_rectangle(1, self.color_background_black, self.LBLX, self.MBASE(line) - 5, self.lcd.screen_width, self.MBASE(line + 1) - 22)
             self.Draw_Menu_Text_Icon(line, text_icon)
-        self.lcd.draw_line(self.color_line, 15, self.MBASE(line + 1) - 22, 235,  self.MBASE(line + 1) - 22)
+        if dividing_line:
+            self.lcd.draw_line(self.color_line, 15, self.MBASE(line + 1) - 22, 235,  self.MBASE(line + 1) - 22)
 
 
     # The "Back" label is always on the first line
@@ -1948,34 +1929,35 @@ class E3V3SE_DISPLAY:
 
 
     def Draw_Info_Menu(self):
+        """
+        Draws the "Info" menu on the display.
+        As the text stays on the bottom of each line instead of 
+        a normal menu item, this is manually drawn.
+        """
         self.Clear_Main_Window()
         # Draw "Info" on header
         self.lcd.draw_icon(False,self.selected_language,self.icon_TEXT_header_info, self.HEADER_HEIGHT, 1)
-
-        self.lcd.draw_string(
-            False, self.lcd.font_8x16, self.color_white, self.color_background_black,
-            (self.lcd.screen_width - len(self.pd.MACHINE_SIZE) * self.MENU_CHR_W) / 2, 122,
-            self.pd.MACHINE_SIZE
-        )
-        self.lcd.draw_string(
-            False, self.lcd.font_8x16, self.color_white, self.color_background_black,
-            (self.lcd.screen_width - len(self.pd.SHORT_BUILD_VERSION) * self.MENU_CHR_W) / 2, 195,
-            self.pd.SHORT_BUILD_VERSION
-        )
-        # self.Frame_TitleCopy(1, 190, 16, 215, 26)  # "Info"
-        self.lcd.move_screen_area(1, 120, 150, 146, 161, 124, 102)
-        self.lcd.move_screen_area(1, 146, 151, 254, 161, 82, 175)
-        self.lcd.move_screen_area(1, 0, 165, 94, 175, 89, 248)
-        self.lcd.draw_string(
-            False, self.lcd.font_8x16, self.color_white, self.color_background_black,
-            (self.lcd.screen_width - len(self.pd.CORP_WEBSITE_E) * self.MENU_CHR_W) / 2, 268,
-            self.pd.CORP_WEBSITE_E
-        )
+        
         self.Draw_Back_First()
-        for i in range(3):
-            self.lcd.draw_icon(True, self.ICON, self.icon_PrintSize + i, 26, 99 + i * 73)
-            self.lcd.draw_line(self.color_line, 16, self.MBASE(2) + i * 73, 256, 156 + i * 73)
+
+        # Bed size 80,95,110,140,155,170,200,215,230,260
+        self.lcd.draw_icon(True, self.selected_language, self.icon_TEXT_bed_size, self.LBLX, 75)
+        self.lcd.draw_icon(True, self.ICON, self.icon_PrintSize, 20, 90 ) 
+        self.lcd.draw_string(False, self.lcd.font_6x12, self.color_white, self.color_background_black, 70, 105, self.pd.MACHINE_SIZE)
+
+        # Klipper version
+        self.lcd.draw_icon(True, self.selected_language, self.icon_TEXT_hardware_version, self.LBLX, 135)
+        self.lcd.draw_icon(True, self.ICON, self.icon_Version, 20, 140 ) 
+        self.lcd.draw_string(False, self.lcd.font_6x12, self.color_white, self.color_background_black, 50, 155, 'Klipper ' + self.pd.SHORT_BUILD_VERSION)
+       
+        # Contact details
+        self.lcd.draw_icon(True, self.selected_language, self.icon_TEXT_contact, self.LBLX, 185) 
+        self.lcd.draw_icon(True, self.ICON, self.icon_Contact, 20, 200 )
+        self.lcd.draw_string(False, self.lcd.font_8x8, self.color_white, self.color_background_black, 50, 215, 'github.com/jpcurti/')
+        self.lcd.draw_string(False, self.lcd.font_8x8, self.color_white, self.color_background_black, 30, 230, 'E3V3SE_display_klipper')
         self.Draw_Status_Area()
+        
+    
 
     def Draw_Tune_Menu(self):
         self.Clear_Main_Window()
@@ -2033,21 +2015,7 @@ class E3V3SE_DISPLAY:
         self.Clear_Main_Window()
         # Draw "Temperature" on header
         self.lcd.draw_icon(False,self.selected_language,self.icon_TEXT_header_temperature, self.HEADER_HEIGHT, 1)
-        # if self.pd.HAS_HOTEND:
-        #     self.lcd.move_screen_area(1, 197, 104, 238, 114, self.LBLX, self.MBASE(self.TEMP_CASE_TEMP))  # Nozzle...
-        #     self.lcd.move_screen_area(1, 1, 89, 83, 101, self.LBLX + 44, self.MBASE(self.TEMP_CASE_TEMP))  # ...Temperature
-        # if self.pd.HAS_HEATED_BED:
-        #     self.lcd.move_screen_area(1, 240, 104, 264, 114, self.LBLX, self.MBASE(self.TEMP_CASE_BED))  # Bed...
-        #     self.lcd.move_screen_area(1, 1, 89, 83, 101, self.LBLX + 27, self.MBASE(self.TEMP_CASE_BED))  # ...Temperature
-        # if self.pd.HAS_FAN:
-        #     self.lcd.move_screen_area(1, 0, 119, 64, 132, self.LBLX, self.MBASE(self.TEMP_CASE_FAN))  # Fan speed
-        # if self.pd.HAS_HOTEND:
-        #     self.lcd.move_screen_area(1, 107, 76, 156, 86, self.LBLX, self.MBASE(self.TEMP_CASE_PLA))  # Preheat...
-        #     self.lcd.move_screen_area(1, 157, 76, 181, 86, self.LBLX + 52, self.MBASE(self.TEMP_CASE_PLA))  # ...PLA
-        #     self.lcd.move_screen_area(1, 131, 119, 182, 132, self.LBLX + 79, self.MBASE(self.TEMP_CASE_PLA))  # PLA setting
-        #     self.lcd.move_screen_area(1, 107, 76, 156, 86, self.LBLX, self.MBASE(self.TEMP_CASE_TPU))  # Preheat...
-        #     self.lcd.move_screen_area(1, 172, 76, 198, 86, self.LBLX + 52, self.MBASE(self.TEMP_CASE_TPU))  # ...ABS
-        #     self.lcd.move_screen_area(1, 131, 119, 182, 132, self.LBLX + 81, self.MBASE(self.TEMP_CASE_TPU))  # ABS setting
+
 
         self.Draw_Back_First(self.select_temp.now == 0)
         if (self.select_temp.now):
@@ -2103,15 +2071,15 @@ class E3V3SE_DISPLAY:
         if (self.select_motion.now):
             self.Draw_Menu_Cursor(self.select_motion.now)
 
-        i = 1
-        self.Draw_Menu_Line(self.icon_MaxSpeed + (self.MOTION_CASE_RATE) - 1)
-        self.Draw_More_Icon(i)
-        i += 1
-        self.Draw_Menu_Line(self.icon_MaxSpeed + (self.MOTION_CASE_ACCEL) - 1)
-        self.Draw_More_Icon(i)
-        i += 1
-        self.Draw_Menu_Line(self.icon_MaxSpeed + (self.MOTION_CASE_STEPS) - 1)
-        self.Draw_More_Icon(i)
+        # i = 1
+        self.Draw_Menu_Line_With_Only_Icons(self.MOTION_CASE_RATE, self.icon_MaxSpeed, self.icon_TEXT_max_speed)
+        self.Draw_More_Icon(self.MOTION_CASE_RATE)
+        # i += 1
+        self.Draw_Menu_Line_With_Only_Icons(self.MOTION_CASE_ACCEL, self.icon_MaxAccelerated,  self.icon_TEXT_max_acceleration)
+        self.Draw_More_Icon(self.MOTION_CASE_ACCEL)
+        # i += 1
+        self.Draw_Menu_Line_With_Only_Icons(self.MOTION_CASE_STEPS, self.icon_Step,  self.icon_TEXT_steps_per_mm)
+        self.Draw_More_Icon(self.MOTION_CASE_STEPS)
 
     def Draw_Move_Menu(self):
         self.Clear_Main_Window()
@@ -2429,17 +2397,15 @@ class E3V3SE_DISPLAY:
         self.Draw_Menu_Line(row, self.icon_set_home)
 
     def Item_Prepare_PLA(self, row):
-        # self.lcd.move_screen_area(1, 107, 76, 156, 86, self.LBLX, self.MBASE(row))  # Preheat"
-        # self.lcd.move_screen_area(1, 157, 76, 181, 86, self.LBLX + 52, self.MBASE(row))  # PLA"
+
         self.Draw_Menu_Line(row, self.icon_preheat_pla,"Preheat PLA")
 
     def Item_Prepare_ABS(self, row):
-        # self.lcd.move_screen_area(1, 107, 76, 156, 86, self.LBLX, self.MBASE(row))  # "Preheat"
-        # self.lcd.move_screen_area(1, 172, 76, 198, 86, self.LBLX + 52, self.MBASE(row))  # "ABS"
+
         self.Draw_Menu_Line(row, self.icon_preheat_abs,"Preheat ABS")
 
     def Item_Prepare_Cool(self, row):
-        # self.lcd.move_screen_area(1, 200, 76, 264, 86, self.LBLX, self.MBASE(row))  # "Cooldown"
+
         self.Draw_Menu_Line(row, self.icon_cool, "Cooldown")
 
     # --------------------------------------------------------------#
