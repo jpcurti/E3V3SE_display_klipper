@@ -1655,85 +1655,86 @@ class E3V3SE_DISPLAY:
         self.lcd.draw_rectangle(1, self.color_background_black, 0, self.STATUS_Y, self.lcd.screen_width, self.lcd.screen_height - 1)
 
         #nozzle temp area
+        
         self.lcd.draw_icon(True, self.ICON, self.icon_hotend_temp, 6, 262)
         self.lcd.draw_int_value(
-            True, True, 0, self.lcd.font_6x12,
+            True, True, 0, self.lcd.font_8x8,
             self.color_white, self.color_background_black,
-            3, 26, 263,
+            3, 26, 268,
             self.pd.thermalManager['temp_hotend'][0]['celsius']
         )
         self.lcd.draw_string(
-                False, self.lcd.font_6x12,
+                False, self.lcd.font_8x8,
             self.color_white, self.color_background_black,
-            26+  3 * self.STAT_CHR_W + 4, 263,
+            26+  3 * self.STAT_CHR_W + 4, 268,
             "/"
         )
         self.lcd.draw_int_value(
-            False, True, 0, self.lcd.font_6x12,
-            self.color_white, self.color_background_black, 3, 26+  3 * self.STAT_CHR_W + 5, 263,
+            False, True, 0, self.lcd.font_8x8,
+            self.color_white, self.color_background_black, 3, 26+  3 * self.STAT_CHR_W + 5, 268,
             self.pd.thermalManager['temp_hotend'][0]['target']
         )
 
         #bed temp area
         self.lcd.draw_icon(True, self.ICON, self.icon_bedtemp, 6, 294)
         self.lcd.draw_int_value(
-            True, True, 0, self.lcd.font_6x12, self.color_white,
-            self.color_background_black, 3, 26, 295,
+            True, True, 0, self.lcd.font_8x8, self.color_white,
+            self.color_background_black, 3, 26, 300,
             self.pd.thermalManager['temp_bed']['celsius']
         )
         self.lcd.draw_string(
-            False, self.lcd.font_6x12, self.color_white,
-            self.color_background_black, 26 + 3 * self.STAT_CHR_W + 4, 295,
+            False, self.lcd.font_8x8, self.color_white,
+            self.color_background_black, 26 + 3 * self.STAT_CHR_W + 4, 300,
             "/"
         )
         self.lcd.draw_int_value(
-            False, True, 0, self.lcd.font_6x12,
-            self.color_white, self.color_background_black, 3, 26 + 3 * self.STAT_CHR_W + 5, 295,
+            False, True, 0, self.lcd.font_8x8,
+            self.color_white, self.color_background_black, 3, 26 + 3 * self.STAT_CHR_W + 5, 300,
             self.pd.thermalManager['temp_bed']['target']
         )
         
         #speed area
         self.lcd.draw_icon(True, self.ICON, self.icon_speed, 99, 262)
         self.lcd.draw_int_value(
-            True, True, 0, self.lcd.font_6x12,
-            self.color_white, self.color_background_black, 3, 99 + 2 * self.STAT_CHR_W, 263,
+            True, True, 0, self.lcd.font_8x8,
+            self.color_white, self.color_background_black, 3, 99 + 2 * self.STAT_CHR_W, 268,
             self.pd.feedrate_percentage
         )
         self.lcd.draw_string(
-            False, self.lcd.font_6x12,
-            self.color_white, self.color_background_black, 99 + 5 * self.STAT_CHR_W + 2, 263,
+            False, self.lcd.font_8x8,
+            self.color_white, self.color_background_black, 99 + 5 * self.STAT_CHR_W + 2, 268,
             "%"
         )
         
         #extrude area
         self.lcd.draw_icon(True, self.ICON, self.icon_MaxSpeedE, 99, 294)
         self.lcd.draw_int_value(
-            True, True, 0, self.lcd.font_6x12,
-            self.color_white, self.color_background_black, 3, 99 + 2 * self.STAT_CHR_W, 295,
+            True, True, 0, self.lcd.font_8x8,
+            self.color_white, self.color_background_black, 3, 99 + 2 * self.STAT_CHR_W, 300,
             self.pd.feedrate_percentage
         )
         self.lcd.draw_string(
-            False, self.lcd.font_6x12,
-            self.color_white, self.color_background_black, 99 + 5 * self.STAT_CHR_W + 2, 295,
+            False, self.lcd.font_8x8,
+            self.color_white, self.color_background_black, 99 + 5 * self.STAT_CHR_W + 2, 300,
             "%"
         )
         
         #fan speed area
         self.lcd.draw_icon(True, self.ICON, self.icon_FanSpeed, 165, 262)
         self.lcd.draw_int_value(
-            True, True, 0, self.lcd.font_6x12,
-            self.color_white, self.color_background_black, 3, 165 + 2 * self.STAT_CHR_W, 263,
+            True, True, 0, self.lcd.font_8x8,
+            self.color_white, self.color_background_black, 3, 165 + 2 * self.STAT_CHR_W, 268,
             self.pd.feedrate_percentage
         )
         self.lcd.draw_string(
-            False, self.lcd.font_6x12,
-            self.color_white, self.color_background_black, 165 + 5 * self.STAT_CHR_W + 2, 263,
+            False, self.lcd.font_8x8,
+            self.color_white, self.color_background_black, 165 + 5 * self.STAT_CHR_W + 2, 268,
             "%"
         )
 
         #Z offset area
         self.lcd.draw_icon(True, self.ICON, self.icon_z_offset, 165, 294)
-        self.lcd.draw_signed_float(self.lcd.font_6x12, self.color_background_black, 2, 2, 191, 295, self.pd.BABY_Z_VAR * 100)
+        self.lcd.draw_signed_float(self.lcd.font_8x8, self.color_background_black, 1, 3, 191, 300, self.pd.BABY_Z_VAR * 100)
         
         if with_update:
             time.sleep(.005)
@@ -1837,10 +1838,10 @@ class E3V3SE_DISPLAY:
         self.lcd.draw_icon(False, self.selected_language, self.icon_TEXT_Stop, 160, 225)
         # Print elapsed time
         self.lcd.draw_icon(True, self.ICON, self.icon_print_time, 117, 77)
-        self.lcd.draw_icon(True, self.selected_language, self.icon_text_printing_time, 141, 61)
+        self.lcd.draw_icon(True, self.selected_language, self.icon_text_printing_time, 170, 61)
         # Print remain time
         self.lcd.draw_icon(True, self.ICON, self.icon_remain_time, 117, 138)
-        self.lcd.draw_icon(True, self.selected_language, self.icon_text_remain_time, 141, 122)
+        self.lcd.draw_icon(True, self.selected_language, self.icon_text_remain_time, 170, 122)
 
     def Draw_Print_ProgressBar(self, Percentrecord=None):
         
@@ -1852,16 +1853,16 @@ class E3V3SE_DISPLAY:
     def Draw_Print_ProgressElapsed(self):
         
         elapsed = self.pd.duration()  # print timer 
-        self.lcd.draw_int_value(True, True, 1, self.lcd.font_8x16, self.color_white, self.color_background_black, 2, 141, 92, elapsed / 3600)
-        self.lcd.draw_string(False, self.lcd.font_8x16, self.color_white, self.color_background_black, 164, 92, ":")
-        self.lcd.draw_int_value(False, True, 1, self.lcd.font_8x16, self.color_white, self.color_background_black, 2, 165, 92, (elapsed % 3600) / 60)
+        self.lcd.draw_int_value(False, True, 1, self.lcd.font_8x8, self.color_white, self.color_background_black, 2, 160, 100, elapsed / 3600)
+        self.lcd.draw_string(False, self.lcd.font_8x8, self.color_white, self.color_background_black, 183, 100, ":")
+        self.lcd.draw_int_value(False, True, 1, self.lcd.font_8x8, self.color_white, self.color_background_black, 2, 190, 100, (elapsed % 3600) / 60)
 
     def Draw_Print_ProgressRemain(self):
         remain_time = self.pd.remain()
         if not remain_time: return #time remaining is None during warmup.
-        self.lcd.draw_int_value(True, True, 1, self.lcd.font_8x16, self.color_white, self.color_background_black, 2, 141, 153, remain_time / 3600)
-        self.lcd.draw_string(False, self.lcd.font_8x16, self.color_white, self.color_background_black, 164, 153, ':')
-        self.lcd.draw_int_value(False, True, 1, self.lcd.font_8x16, self.color_white, self.color_background_black, 2, 165, 153, (remain_time % 3600) / 60)
+        self.lcd.draw_int_value(False, True, 1, self.lcd.font_8x16, self.color_white, self.color_background_black, 2, 160, 166, remain_time / 3600)
+        self.lcd.draw_string(False, self.lcd.font_8x16, self.color_white, self.color_background_black, 183, 166, ':')
+        self.lcd.draw_int_value(False, True, 1, self.lcd.font_8x16, self.color_white, self.color_background_black, 2, 190, 166, (remain_time % 3600) / 60)
 
     def Draw_Print_File_Menu(self):
         self.Clear_Title_Bar()
@@ -2071,13 +2072,13 @@ class E3V3SE_DISPLAY:
         if (self.select_motion.now):
             self.Draw_Menu_Cursor(self.select_motion.now)
 
-        # i = 1
+        
         self.Draw_Menu_Line_With_Only_Icons(self.MOTION_CASE_RATE, self.icon_MaxSpeed, self.icon_TEXT_max_speed)
         self.Draw_More_Icon(self.MOTION_CASE_RATE)
-        # i += 1
+        
         self.Draw_Menu_Line_With_Only_Icons(self.MOTION_CASE_ACCEL, self.icon_MaxAccelerated,  self.icon_TEXT_max_acceleration)
         self.Draw_More_Icon(self.MOTION_CASE_ACCEL)
-        # i += 1
+        
         self.Draw_Menu_Line_With_Only_Icons(self.MOTION_CASE_STEPS, self.icon_Step,  self.icon_TEXT_steps_per_mm)
         self.Draw_More_Icon(self.MOTION_CASE_STEPS)
 
