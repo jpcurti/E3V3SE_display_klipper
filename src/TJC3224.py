@@ -3,32 +3,33 @@ import math
 import serial
 import struct
 
+
 class TJC3224_LCD:
     """
     Class representing the control interface for a TJC3224 LCD display.
-    
+
     This class is based on the T5UIC1_LCD class from the DWIN_T5UIC1_LCD
-    repository available on (https://github.com/odwdinc/DWIN_T5UIC1_LCD) 
-    for the TJC3224_011N display (3.2 inch, 240x320 pixels, no touch) used 
-    on 3d printers from creality. Most of the instructions are compatible 
-    with DWIN T5L instruction set available on the manufacturer website 
+    repository available on (https://github.com/odwdinc/DWIN_T5UIC1_LCD)
+    for the TJC3224_011N display (3.2 inch, 240x320 pixels, no touch) used
+    on 3d printers from creality. Most of the instructions are compatible
+    with DWIN T5L instruction set available on the manufacturer website
     (https://www.dwin-global.com/uploads/T5L_TA-Instruction-Set-Development-Guide.pdf)
     """
-    
+
     # Display resolution
-    screen_width    = 240
-    screen_height   = 320
+    screen_width = 240
+    screen_height = 320
 
     # Data frame structure
-    data_frame_head = b'\xAA'
+    data_frame_head = b"\xAA"
     data_frame_tail = [0xCC, 0x33, 0xC3, 0x3C]
-    data_frame      = []
+    data_frame = []
 
     # Font size registers (for unicode and 8 bit text mode)
-    font_8x8   = 0x00
-    font_6x12  = 0x01
-    font_8x16  = 0x02
-    font_12x24 = 0x03 
+    font_8x8 = 0x00
+    font_6x12 = 0x01
+    font_8x16 = 0x02
+    font_12x24 = 0x03
     font_16x32 = 0x04
     font_20x40 = 0x05
     font_24x48 = 0x06
@@ -38,7 +39,7 @@ class TJC3224_LCD:
     # Colors
     color_white = 0xFFFF
     color_black = 0x0000
-  
+
     # Instructions
     cmd_handshake = 0x00
     cmd_draw_value = 0x14
@@ -53,12 +54,10 @@ class TJC3224_LCD:
     cmd_move_screen_area = 0x09
     cmd_draw_icon = 0x97
     cmd_draw_text = 0x98
-    
+
     # Alias for extra commands
     direction_up = 0x02
     direction_down = 0x03
-    
-    
 
     def __init__(self, port, baud_rate):
         """
@@ -82,7 +81,7 @@ class TJC3224_LCD:
         :param bval: The byte value to be appended.
         :type bval: int
         """
-        self.data_frame += int(bool_val).to_bytes(1, byteorder='big')
+        self.data_frame += int(bool_val).to_bytes(1, byteorder="big")
 
     def word(self, word_val):
         """
@@ -91,7 +90,7 @@ class TJC3224_LCD:
         :param wval: The two-byte value to be appended.
         :type wval: int
         """
-        self.data_frame += int(word_val).to_bytes(2, byteorder='big')
+        self.data_frame += int(word_val).to_bytes(2, byteorder="big")
 
     def long(self, long_val):
         """
@@ -100,7 +99,7 @@ class TJC3224_LCD:
         :param lval: The four-byte value to be appended.
         :type lval: int
         """
-        self.data_frame += int(long_val).to_bytes(4, byteorder='big')
+        self.data_frame += int(long_val).to_bytes(4, byteorder="big")
 
     def double_64(self, double_val):
         """
@@ -109,7 +108,7 @@ class TJC3224_LCD:
         :param dval: The eight-byte value to be appended.
         :type value: int
         """
-        self.data_frame += int(double_val).to_bytes(8, byteorder='big')
+        self.data_frame += int(double_val).to_bytes(8, byteorder="big")
 
     def string(self, string):
         """
@@ -118,7 +117,7 @@ class TJC3224_LCD:
         :param string: The string to be appended.
         :type string: str
         """
-        self.data_frame += string.encode('utf-8')
+        self.data_frame += string.encode("utf-8")
 
     def send(self):
         """
@@ -156,7 +155,7 @@ class TJC3224_LCD:
         # Receive data while there is data available and not exceeding buffer size
         while self.serial.in_waiting and bytes_received < 26:
             # Unpack the received byte and store it in the buffer
-            rx_buffer[bytes_received] = struct.unpack('B', self.serial.read())[0]
+            rx_buffer[bytes_received] = struct.unpack("B", self.serial.read())[0]
 
             # Ignore invalid data and reset if the first byte is not 0xAA
             if rx_buffer[0] != 0xAA:
@@ -165,13 +164,17 @@ class TJC3224_LCD:
                     rx_buffer = [None] * 26
                 continue
 
-            time.sleep(.010)
+            time.sleep(0.010)
             bytes_received += 1
 
         # Verify the received data for a successful handshake
-        return (bytes_received >= 3 and rx_buffer[0] == 0xAA
-                and rx_buffer[1] == 0 and chr(rx_buffer[2]) == 'O'
-                and chr(rx_buffer[3]) == 'K')
+        return (
+            bytes_received >= 3
+            and rx_buffer[0] == 0xAA
+            and rx_buffer[1] == 0
+            and chr(rx_buffer[2]) == "O"
+            and chr(rx_buffer[3]) == "K"
+        )
 
     def set_backlight_brightness(self, brightness):
         """
@@ -184,7 +187,7 @@ class TJC3224_LCD:
         self.byte(min(brightness, 0x40))
         self.send()
 
-    def set_palette(self, background_color = color_black, foreground_color = color_white):
+    def set_palette(self, background_color=color_black, foreground_color=color_white):
         """
         Set the palette colors for drawing functions.
 
@@ -198,7 +201,7 @@ class TJC3224_LCD:
         self.word(background_color)
         self.send()
 
-    def clear_screen(self, color = color_black):
+    def clear_screen(self, color=color_black):
         """
         Clear the screen with a specified color.
 
@@ -267,8 +270,12 @@ class TJC3224_LCD:
         :type y_end: int
         """
         self.set_palette(self.color_white, color)
-        mode_to_command = {0: self.cmd_draw_rectangle, 1: self.cmd_fill_rectangle, 2: self.cmd_reverse_color_area}
-        command = mode_to_command.get(mode, 0) 
+        mode_to_command = {
+            0: self.cmd_draw_rectangle,
+            1: self.cmd_fill_rectangle,
+            2: self.cmd_reverse_color_area,
+        }
+        command = mode_to_command.get(mode, 0)
         self.byte(command)
         self.word(x_start)
         self.word(y_start)
@@ -291,20 +298,36 @@ class TJC3224_LCD:
         """
         b = 0
         a = 0
-        while(a <= b):
+        while a <= b:
             b = math.sqrt(r * r - a * a)
-            while(a == 0):
+            while a == 0:
                 b = b - 1
                 break
-            self.draw_point(color, 1, 1, x_center + a, y_center + b)                       # Draw some sector 1
-            self.draw_point(color, 1, 1, x_center + b, y_center + a)                       # Draw some sector 2
-            self.draw_point(color, 1, 1, x_center + b, y_center - a)                       # Draw some sector 3
-            self.draw_point(color, 1, 1, x_center + a, y_center - b)                       # Draw some sector 4
+            self.draw_point(
+                color, 1, 1, x_center + a, y_center + b
+            )  # Draw some sector 1
+            self.draw_point(
+                color, 1, 1, x_center + b, y_center + a
+            )  # Draw some sector 2
+            self.draw_point(
+                color, 1, 1, x_center + b, y_center - a
+            )  # Draw some sector 3
+            self.draw_point(
+                color, 1, 1, x_center + a, y_center - b
+            )  # Draw some sector 4
 
-            self.draw_point(color, 1, 1, x_center - a, y_center - b)                      # Draw some sector 5
-            self.draw_point(color, 1, 1, x_center - b, y_center - a)                      # Draw some sector 6
-            self.draw_point(color, 1, 1, x_center - b, y_center + a)                      # Draw some sector 7
-            self.draw_point(color, 1, 1, x_center - a, y_center + b)                      # Draw some sector 8
+            self.draw_point(
+                color, 1, 1, x_center - a, y_center - b
+            )  # Draw some sector 5
+            self.draw_point(
+                color, 1, 1, x_center - b, y_center - a
+            )  # Draw some sector 6
+            self.draw_point(
+                color, 1, 1, x_center - b, y_center + a
+            )  # Draw some sector 7
+            self.draw_point(
+                color, 1, 1, x_center - a, y_center + b
+            )  # Draw some sector 8
             a += 1
 
     def fill_circle(self, font_color, x_center, y_center, r):
@@ -323,23 +346,41 @@ class TJC3224_LCD:
         b = 0
         for i in range(r, 0, -1):
             a = 0
-            while(a <= b):
+            while a <= b:
                 b = math.sqrt(i * i - a * a)
-                while(a == 0):
+                while a == 0:
                     b = b - 1
                     break
-                self.draw_point(font_color, 2, 2, x_center + a, y_center + b)  # Draw some sector 1
-                self.draw_point(font_color, 2, 2, x_center + b, y_center + a)  # raw some sector 2
-                self.draw_point(font_color, 2, 2, x_center + b, y_center - a)  # Draw some sector 3
-                self.draw_point(font_color, 2, 2, x_center + a, y_center - b)  # Draw some sector 4
+                self.draw_point(
+                    font_color, 2, 2, x_center + a, y_center + b
+                )  # Draw some sector 1
+                self.draw_point(
+                    font_color, 2, 2, x_center + b, y_center + a
+                )  # raw some sector 2
+                self.draw_point(
+                    font_color, 2, 2, x_center + b, y_center - a
+                )  # Draw some sector 3
+                self.draw_point(
+                    font_color, 2, 2, x_center + a, y_center - b
+                )  # Draw some sector 4
 
-                self.draw_point(font_color, 2, 2, x_center - a, y_center - b)  # Draw some sector 5
-                self.draw_point(font_color, 2, 2, x_center - b, y_center - a)  # Draw some sector 6
-                self.draw_point(font_color, 2, 2, x_center - b, y_center + a)  # Draw some sector 7
-                self.draw_point(font_color, 2, 2, x_center - a, y_center + b)  # Draw some sector 8
+                self.draw_point(
+                    font_color, 2, 2, x_center - a, y_center - b
+                )  # Draw some sector 5
+                self.draw_point(
+                    font_color, 2, 2, x_center - b, y_center - a
+                )  # Draw some sector 6
+                self.draw_point(
+                    font_color, 2, 2, x_center - b, y_center + a
+                )  # Draw some sector 7
+                self.draw_point(
+                    font_color, 2, 2, x_center - a, y_center + b
+                )  # Draw some sector 8
                 a = a + 2
 
-    def draw_string(self, show_background, size, font_color, background_color, x, y, string):
+    def draw_string(
+        self, show_background, size, font_color, background_color, x, y, string
+    ):
         """
         Draw a string on the screen.
 
@@ -361,15 +402,27 @@ class TJC3224_LCD:
         self.byte(self.cmd_draw_text)
         self.word(x)
         self.word(y)
-        self.byte(0x00) # font
-        self.byte(0x02 | (show_background * 0x40)) # mode (bshow)
-        self.byte(size) # size
+        self.byte(0x00)  # font
+        self.byte(0x02 | (show_background * 0x40))  # mode (bshow)
+        self.byte(size)  # size
         self.word(font_color)
         self.word(background_color)
         self.string(string)
         self.send()
 
-    def draw_int_value(self, show_background, zeroFill, zeroMode, font_size, color, background_color, iNum, x, y, value):
+    def draw_int_value(
+        self,
+        show_background,
+        zeroFill,
+        zeroMode,
+        font_size,
+        color,
+        background_color,
+        iNum,
+        x,
+        y,
+        value,
+    ):
         """
         Draw a positive integer value on the screen.
 
@@ -400,7 +453,13 @@ class TJC3224_LCD:
         # Bit 5: zeroFill
         # Bit 4: zeroMode
         # Bit 3-0: size
-        self.byte((show_background * 0x80) | (0 * 0x40) | (zeroFill * 0x20) | (zeroMode * 0x10) | font_size)
+        self.byte(
+            (show_background * 0x80)
+            | (0 * 0x40)
+            | (zeroFill * 0x20)
+            | (zeroMode * 0x10)
+            | font_size
+        )
         self.word(color)
         self.word(background_color)
         self.byte(iNum)
@@ -410,7 +469,20 @@ class TJC3224_LCD:
         self.double_64(value)
         self.send()
 
-    def draw_float_value(self, show_background, zeroFill, zeroMode, size, color, background_color, iNum, fNum, x, y, value):
+    def draw_float_value(
+        self,
+        show_background,
+        zeroFill,
+        zeroMode,
+        size,
+        color,
+        background_color,
+        iNum,
+        fNum,
+        x,
+        y,
+        value,
+    ):
         """
         Draw a floating point number on the screen.
 
@@ -443,7 +515,13 @@ class TJC3224_LCD:
         # Bit 5: zeroFill
         # Bit 4: zeroMode
         # Bit 3-0: size
-        self.byte((show_background * 0x80) | (0 * 0x40) | (zeroFill * 0x20) | (zeroMode * 0x10) | size)
+        self.byte(
+            (show_background * 0x80)
+            | (0 * 0x40)
+            | (zeroFill * 0x20)
+            | (zeroMode * 0x10)
+            | size
+        )
         self.word(color)
         self.word(background_color)
         self.byte(iNum)
@@ -453,7 +531,9 @@ class TJC3224_LCD:
         self.long(value)
         self.send()
 
-    def draw_signed_float(self, show_background, size, color, background_color, iNum, fNum, x, y, value):
+    def draw_signed_float(
+        self, show_background, size, color, background_color, iNum, fNum, x, y, value
+    ):
         """
         Draw a signed floating-point number on the screen.
 
@@ -473,40 +553,68 @@ class TJC3224_LCD:
         :type value: float
         """
         if value < 0:
-            self.draw_string(show_background,  size, color, background_color, x - 6, y-3, "-")
-            self.draw_float_value(show_background, False, 0, size, color, background_color, iNum, fNum, x, y, -value)
+            self.draw_string(
+                show_background, size, color, background_color, x - 6, y - 3, "-"
+            )
+            self.draw_float_value(
+                show_background,
+                False,
+                0,
+                size,
+                color,
+                background_color,
+                iNum,
+                fNum,
+                x,
+                y,
+                -value,
+            )
         else:
-            self.draw_string(show_background,  size, color, background_color, x - 6, y-3, " ")
-            self.draw_float_value(show_background, False, 0, size, color, background_color, iNum, fNum, x, y, value)
+            self.draw_string(
+                show_background, size, color, background_color, x - 6, y - 3, " "
+            )
+            self.draw_float_value(
+                show_background,
+                False,
+                0,
+                size,
+                color,
+                background_color,
+                iNum,
+                fNum,
+                x,
+                y,
+                value,
+            )
 
     def draw_icon(self, show_background, libID, picID, x, y):
-            """
-            Draw an icon on the screen.
+        """
+        Draw an icon on the screen.
 
-            :param show_background: True to display the background color, False to not display the background color.
-            :type show_background: bool
-            :param libID: Icon library ID.
-            :type libID: int
-            :param picID: Icon ID.
-            :type picID: int
-            :param x: X-coordinate of the upper-left corner.
-            :type x: int
-            :param y: Y-coordinate of the upper-left corner.
-            :type y: int
-            """
-            if x > self.screen_width - 1:
-                x = self.screen_width - 1
-            if y > self.screen_height - 1:
-                y = self.screen_height - 1
-            self.byte(self.cmd_draw_icon)
-            self.word(x)
-            self.word(y)
-            self.byte(libID)
-            self.byte(show_background * 0x01) 
-            self.word(picID)
-            self.send()
+        :param show_background: True to display the background color, False to not display the background color.
+        :type show_background: bool
+        :param libID: Icon library ID.
+        :type libID: int
+        :param picID: Icon ID.
+        :type picID: int
+        :param x: X-coordinate of the upper-left corner.
+        :type x: int
+        :param y: Y-coordinate of the upper-left corner.
+        :type y: int
+        """
+        if x > self.screen_width - 1:
+            x = self.screen_width - 1
+        if y > self.screen_height - 1:
+            y = self.screen_height - 1
+        self.byte(self.cmd_draw_icon)
+        self.word(x)
+        self.word(y)
+        self.byte(libID)
+        self.byte(show_background * 0x01)
+        self.word(picID)
+        self.send()
 
-    def draw_image(self, id = 1):
+    def draw_image(self, id=1):
         """
         Draw a JPG image on the screen and cache it in the virtual display area.
 
@@ -517,7 +625,9 @@ class TJC3224_LCD:
         self.byte(id)
         self.send()
 
-    def move_screen_area(self, direction, offset, background_color, x_start, y_start, x_end, y_end):
+    def move_screen_area(
+        self, direction, offset, background_color, x_start, y_start, x_end, y_end
+    ):
         """
         Copy an area from the virtual display area to the current screen.
 
@@ -545,8 +655,3 @@ class TJC3224_LCD:
         self.word(x_end)
         self.word(y_end)
         self.send()
-
-
-
-
-    
