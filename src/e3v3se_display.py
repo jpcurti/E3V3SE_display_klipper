@@ -2181,8 +2181,6 @@ class E3V3SE_DISPLAY:
 
     def Popup_window_PauseOrStop(self):
         self.Clear_Main_Window()
-        # self.Draw_Popup_Bkgd_60()
-
         if(self.select_print.now == 1):
             self.lcd.draw_icon(True, self.selected_language, self.icon_popup_pause_print, 15, self.HEADER_HEIGHT + 50)
 
@@ -2195,7 +2193,6 @@ class E3V3SE_DISPLAY:
 
     def Popup_Window_Home(self, parking=False):
         self.Clear_Main_Window()
-        # self.Draw_Popup_Bkgd_60()
         self.lcd.draw_icon(True, self.selected_language, self.icon_popup_homing, 10, self.HEADER_HEIGHT + 10)
         if parking:
             self.lcd.draw_string(
@@ -2212,14 +2209,14 @@ class E3V3SE_DISPLAY:
 
     def Popup_Window_ETempTooLow(self):
         self.Clear_Main_Window()
-        self.Draw_Popup_Bkgd_60()
-        self.lcd.draw_icon(True, self.selected_language, self.icon_TempTooLow, 10, self.HEADER_HEIGHT + 10)
-        self.lcd.draw_string(
-            False, True, self.lcd.font_8x8, self.color_popup_text,
-            self.color_popup_background, 20, 235,
-            "Nozzle is too cold"
-        )
-        self.lcd.draw_icon(True, self.ICON, self.icon_confim_button_hovered, 86, 280)
+        self.lcd.draw_rectangle(1,self.color_popup_background, 15, self.HEADER_HEIGHT + 50, 225, 195)
+        self.lcd.draw_icon(True, self.selected_language, self.icon_popup_nozzle_temp_too_low, 15, self.HEADER_HEIGHT + 50)
+        self.lcd.draw_rectangle(0,self.color_white, 15, self.HEADER_HEIGHT + 50, 225, 195)
+        
+        # Draw ok button
+        self.lcd.draw_icon(True, self.selected_language, self.icon_confim_button_hovered, 80, 154)
+        self.lcd.draw_rectangle(0, self.color_white, 80, 154, 160, 185)
+        
 
     def Erase_Menu_Cursor(self, line):
         self.lcd.draw_rectangle(1, self.color_background_black, 0, self.MBASE(line) - 18, 14, self.MBASE(line + 1) - 20)
@@ -2424,7 +2421,7 @@ class E3V3SE_DISPLAY:
                 self.Draw_Print_ProgressBar(0)
                 # show print done confirm
                 self.lcd.draw_rectangle(1, self.color_background_black, 0, 250, self.lcd.screen_width - 1, self.STATUS_Y)
-                self.lcd.draw_icon(True, self.ICON, self.icon_confim_button_hovered, 86, 283)
+                self.lcd.draw_icon(True, self.selected_language, self.icon_confim_button_hovered, 86, 283)
             elif (self.pd.HMI_flag.pause_flag != self.pd.printingIsPaused()):
                 # print status update
                 self.pd.HMI_flag.pause_flag = self.pd.printingIsPaused()
