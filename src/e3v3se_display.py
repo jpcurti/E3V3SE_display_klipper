@@ -127,6 +127,7 @@ class E3V3SE_DISPLAY:
     MaxJerk_value = 18
     Step = 19
     Step_value = 20
+    FeatureNotAvailable = 21
 
     # Last Process ID
     Last_Prepare = 21
@@ -478,7 +479,6 @@ class E3V3SE_DISPLAY:
         self.lcd.set_backlight_brightness(0)
         self.timer.stop()
 
-
     def MBASE(self, L):
         return 45 + self.MLINE * L
 
@@ -584,13 +584,15 @@ class E3V3SE_DISPLAY:
                 self.Draw_Control_Menu()
             if self.select_page.now == 3:  # Leveling or Info
                 if self.pd.HAS_ONESTEP_LEVELING:
-                    self.checkkey = self.Leveling
-                    self.HMI_Leveling()
+                    # The leveling menu is not implemented yet, therefore it popups
+                    # a "feature not available" window
+                    self.popup_caller = self.MainMenu
+                    self.checkkey = self.FeatureNotAvailable
+                    self.Draw_FeatureNotAvailable_Popup()
+                
                 else:
                     self.checkkey = self.Info
                     self.Draw_Info_Menu()
-
-        
 
     def HMI_SelectFile(self):
         encoder_diffState = self.get_encoder_state()
@@ -637,8 +639,6 @@ class E3V3SE_DISPLAY:
 
                 self.pd.openAndPrintFile(filenum)
                 self.Goto_PrintProcess()
-
-        
 
     def HMI_Prepare(self):
         """
@@ -744,7 +744,6 @@ class E3V3SE_DISPLAY:
                 self.HMI_ToggleLanguage()
                 self.Draw_Prepare_Menu()
         
-
     def HMI_Control(self):
         encoder_diffState = self.get_encoder_state()
         if (encoder_diffState == self.ENCODER_DIFF_NO):
@@ -791,14 +790,26 @@ class E3V3SE_DISPLAY:
                 self.Draw_Motion_Menu()
             if (self.select_control.now == self.CONTROL_CASE_INFO):  # Info
                 self.checkkey = self.Info
-                self.Draw_Info_Menu()
-
-        
-
-    def HMI_Leveling(self):
-        print("TODO: leveling not implemented!")
-        self.Goto_MainMenu() 
-        
+                self.Draw_Info_Menu()    
+    
+    def HMI_FeatureNotAvailable(self):
+        """
+        Handles the "feature not available" popup.
+        This method is called when the user enters a menu that
+        is not implemented yet in the display interface. After 
+        the user presses the confirmation, he needs to go back to 
+        where he came from.
+        """
+        encoder_diffState = self.get_encoder_state()
+        if (encoder_diffState == self.ENCODER_DIFF_NO):
+            return
+        if (encoder_diffState == self.ENCODER_DIFF_ENTER):
+            self.checkkey = self.popup_caller
+            if(self.popup_caller == self.MainMenu):
+                self.Goto_MainMenu()
+            if(self.popup_caller == self.Motion):
+                self.Draw_Motion_Menu()
+                              
     def HMI_Info(self):
         encoder_diffState = self.get_encoder_state()
         if (encoder_diffState == self.ENCODER_DIFF_NO):
@@ -900,7 +911,6 @@ class E3V3SE_DISPLAY:
                 else:
                     self.Goto_PrintProcess()  # cancel stop
         
-
     # Tune  */
     def HMI_Tune(self):
         encoder_diffState = self.get_encoder_state()
@@ -942,8 +952,6 @@ class E3V3SE_DISPLAY:
                     self.MBASE(self.TUNE_CASE_ZOFF)-10,
                     self.pd.HMI_ValueStruct.offset_value
                 )
-
-        
 
     def HMI_PrintSpeed(self):
         encoder_diffState = self.get_encoder_state()
@@ -1044,7 +1052,6 @@ class E3V3SE_DISPLAY:
                 )
                 self.EncoderRateLimit = False
         
-
     def HMI_Move_X(self):
         """
         Handles the X axis move logic based on the encoder input.
@@ -1080,7 +1087,6 @@ class E3V3SE_DISPLAY:
             True, True, 0, self.lcd.font_8x8, self.color_yellow, self.color_background_black,
             3, 1, 175, self.MBASE(1) -10 , self.pd.HMI_ValueStruct.Move_X_scale)
         
-
     def HMI_Move_Y(self):
         """
         Handles the Y axis move logic based on the encoder input.
@@ -1116,7 +1122,6 @@ class E3V3SE_DISPLAY:
             True, True, 0, self.lcd.font_8x8, self.color_yellow, self.color_background_black,
             3, 1, 175, self.MBASE(2) -10, self.pd.HMI_ValueStruct.Move_Y_scale)
         
-
     def HMI_Move_Z(self):
         """
         Handles the Z axis move logic based on the encoder input.
@@ -1151,7 +1156,6 @@ class E3V3SE_DISPLAY:
             True, True, 0, self.lcd.font_8x8, self.color_yellow, self.color_background_black,
             3, 1, 175, self.MBASE(3) -10, self.pd.HMI_ValueStruct.Move_Z_scale)
         
-
     def HMI_Move_E(self):
         """
         Handles the Extruder move logic based on the encoder input.
@@ -1183,7 +1187,6 @@ class E3V3SE_DISPLAY:
         self.pd.current_position.e = self.pd.HMI_ValueStruct.Move_E_scale / 10
         self.lcd.draw_signed_float(True, self.lcd.font_8x8, self.color_white, self.color_background_black, 3, 1, 175, self.MBASE(4)-10, self.pd.HMI_ValueStruct.Move_E_scale)
         
-
     def HMI_Temperature(self):
         encoder_diffState = self.get_encoder_state()
         if (encoder_diffState == self.ENCODER_DIFF_NO):
@@ -1298,8 +1301,6 @@ class E3V3SE_DISPLAY:
                 i += 1
                 self.Draw_Menu_Line_With_Only_Icons(i, self.icon_write_eeprom, self.icon_TEXT_save_tpu_parameters)  # Save TPU configuration
 
-
-
     def HMI_PLAPreheatSetting(self):
         encoder_diffState = self.get_encoder_state()
         if (encoder_diffState == self.ENCODER_DIFF_NO):
@@ -1349,7 +1350,6 @@ class E3V3SE_DISPLAY:
                 success = self.pd.save_settings()
                 self.HMI_AudioFeedback(success)
         
-
     def HMI_TPUPreheatSetting(self):
         encoder_diffState = self.get_encoder_state()
         if (encoder_diffState == self.ENCODER_DIFF_NO):
@@ -1401,7 +1401,6 @@ class E3V3SE_DISPLAY:
                 success = self.pd.save_settings()
                 self.HMI_AudioFeedback(success)
         
-
     def HMI_ETemp(self):
         encoder_diffState = self.get_encoder_state()
         if (encoder_diffState == self.ENCODER_DIFF_NO):
@@ -1558,8 +1557,15 @@ class E3V3SE_DISPLAY:
                 self.select_control.set(self.CONTROL_CASE_MOVE)
                 self.index_control = self.MROWS
                 self.Draw_Control_Menu()
+            else:
+                # Max speed, acceleration and steps per mm menu
+                # are not implemented yet. Popup a "feature not
+                # available" window and return to motion menu
+                # when confirm is pressed.
+                self.popup_caller = self.Motion
+                self.checkkey = self.FeatureNotAvailable
+                self.Draw_FeatureNotAvailable_Popup()
         
-
     def HMI_Zoffset(self):
         encoder_diffState = self.get_encoder_state()
         if (encoder_diffState == self.ENCODER_DIFF_NO):
@@ -1607,7 +1613,6 @@ class E3V3SE_DISPLAY:
             self.pd.HMI_ValueStruct.offset_value
         )
         
-
     def HMI_MaxSpeed(self):
         encoder_diffState = self.get_encoder_state()
         if (encoder_diffState == self.ENCODER_DIFF_NO):
@@ -1648,7 +1653,6 @@ class E3V3SE_DISPLAY:
         if (encoder_diffState == self.ENCODER_DIFF_NO):
             return
 
-    # --------------------------------------------------------------#
     # --------------------------------------------------------------#
 
     def Draw_Status_Area(self, with_update = True):
@@ -1817,9 +1821,7 @@ class E3V3SE_DISPLAY:
             c2 = self.color_background_black
         self.lcd.draw_rectangle(0, c1, 30, 154, 111, 185)
         self.lcd.draw_rectangle(0, c2, 129, 154, 211, 186)
-
-    def Draw_Popup_Bkgd_60(self):
-        self.lcd.draw_rectangle(1, self.color_popup_background, 10, self.HEADER_HEIGHT + 10, self.lcd.screen_width - 10, self.STATUS_Y -10)
+        
 
     def Draw_Printing_Screen(self):
         # Tune
@@ -2206,6 +2208,21 @@ class E3V3SE_DISPLAY:
         # Draw ok button
         self.lcd.draw_icon(True, self.selected_language, self.icon_confim_button_hovered, 80, 154)
         self.lcd.draw_rectangle(0, self.color_white, 80, 154, 160, 185)
+
+    def Draw_FeatureNotAvailable_Popup(self):
+        """
+        Displays a popup window indicating that this feature is not available.
+        """
+        # self.Clear_Main_Window()
+        self.lcd.draw_rectangle(1,self.color_popup_background, 15, self.HEADER_HEIGHT + 50, 225, 195)
+        self.lcd.draw_rectangle(0,self.color_white, 15, self.HEADER_HEIGHT + 50, 225, 195)
+        # Draw text with "Feature not available on the screen. Please use klipper"
+        self.lcd.draw_string(False, self.lcd.font_8x8, self.color_white, self.color_popup_background, 20, self.HEADER_HEIGHT + 55, "Feature not available on")
+        self.lcd.draw_string(False, self.lcd.font_8x8, self.color_white, self.color_popup_background, 20, self.HEADER_HEIGHT + 75, "the screen yet, please")
+        self.lcd.draw_string(False, self.lcd.font_8x8, self.color_white, self.color_popup_background, 20, self.HEADER_HEIGHT + 95, "use the klipper interface.")
+        # Draw ok button
+        self.lcd.draw_icon(True, self.selected_language, self.icon_confim_button_hovered, 80, 154)
+        self.lcd.draw_rectangle(0, self.color_white, 80, 154, 160, 185)
         
 
     def Erase_Menu_Cursor(self, line):
@@ -2491,6 +2508,8 @@ class E3V3SE_DISPLAY:
             self.HMI_MaxJerkXYZE()
         elif self.checkkey == self.Step_value:
             self.HMI_StepXYZE()
+        elif self.checkkey == self.FeatureNotAvailable:
+            self.HMI_FeatureNotAvailable()
 
     def get_encoder_state(self):
         if self.EncoderRateLimit:
