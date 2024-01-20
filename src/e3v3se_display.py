@@ -641,6 +641,10 @@ class E3V3SE_DISPLAY:
         
 
     def HMI_Prepare(self):
+        """
+        This function handles the logic for scrolling through the prepare menu options,
+        selecting different actions, and executing the corresponding actions based on user input.
+        """
         encoder_diffState = self.get_encoder_state()
         if (encoder_diffState == self.ENCODER_DIFF_NO):
             return
@@ -791,7 +795,6 @@ class E3V3SE_DISPLAY:
 
         
 
-    #TODO: HMI for leveling
     def HMI_Leveling(self):
         print("TODO: leveling not implemented!")
         self.Goto_MainMenu() 
@@ -965,38 +968,25 @@ class E3V3SE_DISPLAY:
         )
 
     def HMI_AxisMove(self):
+        """
+        Handles the axis movement in the HMI (Human Machine Interface).
+
+        This function checks the encoder state and performs the corresponding action based on the state.
+        It updates the display and handles the movement of the X, Y, Z axes, and the extruder.
+        """
         encoder_diffState = self.get_encoder_state()
         if (encoder_diffState == self.ENCODER_DIFF_NO):
             return
 
+        # In case of "nozzle too cold" popup is on the screen
         if self.pd.PREVENT_COLD_EXTRUSION:
-            # popup window resume
             if (self.pd.HMI_flag.ETempTooLow_flag):
+                 # Resuming after "nozzle too cold" popup should clear the flag and draw move menu again
                 if (encoder_diffState == self.ENCODER_DIFF_ENTER):
                     self.pd.HMI_flag.ETempTooLow_flag = False
                     self.pd.current_position.e = self.pd.HMI_ValueStruct.Move_E_scale = 0
                     self.Draw_Move_Menu()
-                    self.lcd.draw_float_value(
-                        True, True, 0, self.lcd.font_8x8, self.color_white, self.color_background_black,
-                        3, 1, 216, self.MBASE(1),
-                        self.pd.HMI_ValueStruct.Move_X_scale
-                    )
-                    self.lcd.draw_float_value(
-                        True, True, 0, self.lcd.font_8x8, self.color_white, self.color_background_black,
-                        3, 1, 216, self.MBASE(2),
-                        self.pd.HMI_ValueStruct.Move_Y_scale
-                    )
-                    self.lcd.draw_float_value(
-                        True, True, 0, self.lcd.font_8x8, self.color_white, self.color_background_black,
-                        3, 1, 216, self.MBASE(3),
-                        self.pd.HMI_ValueStruct.Move_Z_scale
-                    )
-                    self.lcd.draw_signed_float(True, 
-                        self.lcd.font_8x8, self.color_white, self.color_background_black, 3, 1, 216, self.MBASE(4), 0
-                    )
-                    
                 return
-            
 
         # Avoid flicker by updating only the previous menu
         if (encoder_diffState == self.ENCODER_DIFF_CW):
@@ -1012,7 +1002,6 @@ class E3V3SE_DISPLAY:
                 self.select_prepare.set(1)
                 self.index_prepare = self.MROWS
                 self.Draw_Prepare_Menu()
-
             elif selected_line == 1:  # X axis move
                 self.checkkey = self.Move_X
                 self.pd.HMI_ValueStruct.Move_X_scale = self.pd.current_position.x * self.MINUNITMULT
@@ -1041,23 +1030,25 @@ class E3V3SE_DISPLAY:
                 )
                 self.EncoderRateLimit = False
             elif selected_line == 4:  # Extruder
-                # window tips
+                # Check if nozzle is too cold and don't allow extrusion. Popup warning instead
                 if self.pd.PREVENT_COLD_EXTRUSION:
                     if (self.pd.thermalManager['temp_hotend'][0]['celsius'] < self.pd.EXTRUDE_MINTEMP):
                         self.pd.HMI_flag.ETempTooLow_flag = True
                         self.Popup_Window_ETempTooLow()
-                        
                         return
                 self.checkkey = self.Extruder
                 self.pd.HMI_ValueStruct.Move_E_scale = self.pd.current_position.e * self.MINUNITMULT
-                self.lcd.draw_signed_float(True, 
-                    self.lcd.font_8x8, self.color_white, self.color_background_black, 3, 1, 216, self.MBASE(4),
+                self.lcd.draw_signed_float(False, 
+                    self.lcd.font_8x8, self.color_yellow, self.color_background_black, 3, 1, 175, self.MBASE(selected_line) -10 ,
                     self.pd.HMI_ValueStruct.Move_E_scale
                 )
                 self.EncoderRateLimit = False
         
 
     def HMI_Move_X(self):
+        """
+        Handles the X axis move logic based on the encoder input.
+        """
         encoder_diffState = self.get_encoder_state()
         if (encoder_diffState == self.ENCODER_DIFF_NO):
             return
@@ -1091,6 +1082,9 @@ class E3V3SE_DISPLAY:
         
 
     def HMI_Move_Y(self):
+        """
+        Handles the Y axis move logic based on the encoder input.
+        """
         encoder_diffState = self.get_encoder_state()
         if (encoder_diffState == self.ENCODER_DIFF_NO):
             return
@@ -1124,6 +1118,9 @@ class E3V3SE_DISPLAY:
         
 
     def HMI_Move_Z(self):
+        """
+        Handles the Z axis move logic based on the encoder input.
+        """
         encoder_diffState = self.get_encoder_state()
         if (encoder_diffState == self.ENCODER_DIFF_NO):
             return
@@ -1156,6 +1153,9 @@ class E3V3SE_DISPLAY:
         
 
     def HMI_Move_E(self):
+        """
+        Handles the Extruder move logic based on the encoder input.
+        """
         self.pd.last_E_scale = 0
         encoder_diffState = self.get_encoder_state()
         if (encoder_diffState == self.ENCODER_DIFF_NO):
@@ -1776,14 +1776,10 @@ class E3V3SE_DISPLAY:
             self.lcd.draw_line(self.color_line, 15, self.MBASE(line + 1) - 22, 235,  self.MBASE(line + 1) - 22)
 
 
-    # The "Back" label is always on the first line
-    def Draw_Back_Label(self):
-        self.lcd.move_screen_area(1, 226, 179, 256, 189, self.LBLX, self.MBASE(0))
-
     # Draw "Back" line at the top
     def Draw_Back_First(self, is_sel=True):
         self.Draw_Menu_Line_With_Only_Icons(0, self.icon_back, self.icon_TEXT_back)
-        # self.Draw_Back_Label()
+
         if (is_sel):
             self.Draw_Menu_Cursor(0)
 
@@ -2191,11 +2187,17 @@ class E3V3SE_DISPLAY:
         self.lcd.draw_icon(True, self.selected_language, self.icon_cancel_button_hovered, 130, self.HEADER_HEIGHT + 130)
         self.Draw_Select_Highlight(True)
 
-    def Popup_Window_Home(self, parking=False):
+    def Popup_Window_Home(self):
+        """
+        Displays a popup window indicating that the printer is homing.
+        """
         self.Clear_Main_Window()
         self.lcd.draw_icon(True, self.selected_language, self.icon_popup_homing, 18, self.HEADER_HEIGHT + 60)
 
     def Popup_Window_ETempTooLow(self):
+        """
+        Displays a popup window indicating that the extruder temperature is too low.
+        """
         self.Clear_Main_Window()
         self.lcd.draw_rectangle(1,self.color_popup_background, 15, self.HEADER_HEIGHT + 50, 225, 195)
         self.lcd.draw_icon(True, self.selected_language, self.icon_popup_nozzle_temp_too_low, 15, self.HEADER_HEIGHT + 50)
@@ -2331,7 +2333,7 @@ class E3V3SE_DISPLAY:
         else:
             self.lcd.draw_icon(True, self.ICON, self.icon_continue, 86, 191)
             self.lcd.draw_icon(False, self.selected_language, self.icon_TEXT_Pause, 86, 225)
-            self.lcd.move_screen_area(1, 1, 424, 31, 434, 121, 325)
+            #self.lcd.move_screen_area(1, 1, 424, 31, 434, 121, 325)
 
     def show_pause(self):
         if (self.select_print.now == 1):
