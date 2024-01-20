@@ -112,3 +112,7 @@ Changing 0x82 for 0x81 doesnt move the screen, but to 0x83 makes it move down! I
 
 raspberry pi pinout:
 ![Alt text](images/rpi_pinout.png.png)
+
+
+DISPLAY UART IS LOCATED ON PIN PA3,2 (USART 2)
+SERIAL_BRIDGE_CONFIG_USART2_PA3,PA2
