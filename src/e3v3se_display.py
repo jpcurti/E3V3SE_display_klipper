@@ -2193,19 +2193,7 @@ class E3V3SE_DISPLAY:
 
     def Popup_Window_Home(self, parking=False):
         self.Clear_Main_Window()
-        self.lcd.draw_icon(True, self.selected_language, self.icon_popup_homing, 10, self.HEADER_HEIGHT + 10)
-        if parking:
-            self.lcd.draw_string(
-                False, True, self.lcd.font_8x8, self.color_popup_text, self.color_popup_background,
-                (272 - 8 * (7)) / 2, 230, "Parking")
-        else:
-            self.lcd.draw_string(
-                False, True, self.lcd.font_8x8, self.color_popup_text, self.color_popup_background,
-                (272 - 8 * (10)) / 2, 230, "Homing XYZ")
-
-        self.lcd.draw_string(
-            False, True, self.lcd.font_8x8, self.color_popup_text, self.color_popup_background,
-            (272 - 8 * 23) / 2, 260, "Please wait until done.")
+        self.lcd.draw_icon(True, self.selected_language, self.icon_popup_homing, 18, self.HEADER_HEIGHT + 60)
 
     def Popup_Window_ETempTooLow(self):
         self.Clear_Main_Window()
