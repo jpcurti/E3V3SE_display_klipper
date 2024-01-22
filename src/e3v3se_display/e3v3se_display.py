@@ -2,15 +2,12 @@ import time
 import multitimer
 import atexit
 
-from encoder import Encoder
+from .encoder import Encoder
+from .printerInterface import PrinterData
+from .TJC3224 import TJC3224_LCD
+
+
 from RPi import GPIO
-from printerInterface import PrinterData
-
-from TJC3224 import TJC3224_LCD
-
-# COM port and baud rate
-COM_PORT = "/dev/ttyAMA0"  # Replace 'x' with your COM port number
-BAUD_RATE = 115200
 
 
 def current_milli_time():
@@ -443,7 +440,7 @@ class E3V3SE_DISPLAY:
     PREHEAT_CASE_TOTAL = PREHEAT_CASE_SAVE
 
     def __init__(
-        self, USARTx, encoder_pins, button_pin, octoPrint_API_Key, Klipper_Socket
+        self, USARTx, baudrate, encoder_pins, button_pin, octoPrint_API_Key, Klipper_Socket
     ):
         GPIO.setmode(GPIO.BCM)
         self.encoder = Encoder(encoder_pins[0], encoder_pins[1])
@@ -458,7 +455,7 @@ class E3V3SE_DISPLAY:
         self.EncodeEnter = current_milli_time() + self.ENCODER_WAIT_ENTER
         self.next_rts_update_ms = 0
         self.last_cardpercentValue = 101
-        self.lcd = TJC3224_LCD(USARTx, BAUD_RATE)
+        self.lcd = TJC3224_LCD(USARTx, baudrate)
         self.checkkey = self.MainMenu
         self.pd = PrinterData(octoPrint_API_Key, Klipper_Socket)
         print("Testing Web-services")

@@ -1,0 +1,7 @@
+imutils==0.5.4
+multitimer==0.3
+pyserial==3.5b0
+Requests==2.31.0
+setuptools==52.0.0
+
+
