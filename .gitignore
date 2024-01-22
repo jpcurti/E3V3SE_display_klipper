@@ -1,6 +1,8 @@
 src/run.py
 .vscode
+config.ini
 reverse_engineering/icon_database*
+.github/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
