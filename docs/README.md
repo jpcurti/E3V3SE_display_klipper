@@ -4,7 +4,7 @@
 
 This project allows you to use the original Creality E3V3SE (Ender 3 V3 SE) display with Klipper when connected directly to the host (at the moment a Raspberry pi only) via UART and GPIOs. It fetches the information from Klipper via the moonraker API and is able to send basic commands back, so that you can re-use the printer original display for some basic functionality.
 
-As the E3V3SE communication protocol  with the display is (at the moment) not public, this repository also contains a guide on how to reverse engineer the communication protocol, so that the same can be done for any other 3d printer. Feel free to modify it to your specific model and, most important, have fun doing it :).
+Considering that the communication protocol between E3V3SE and the display is presently undisclosed, the repository includes a [comprehensive guide on reverse engineering the communication protocol of such printers](/docs/tjc3224_reverse_engineering.md). This resource is invaluable for extending this capability to other 3D printers. Users are encouraged to customize the project to suit their specific printer models.
 
 
 ## Installation
@@ -32,7 +32,24 @@ e3v3se_display_klipper --com_port '/dev/ttyAMA0' --baud 115200 --gpio_wheel_butt
 
 ```
 
+## Wiring
+
+### Using a Rpi as a host
+If you want to follow the same wiring as the default configuration, make sure to [configure the primary UART on the raspberry!](https://www.raspberrypi.com/documentation/computers/configuration.html#configuring-uarts).
+
+Then, wire the raspberry pi and display according to the image below:
+![Wiring diagram between display and raspberry pi](https://github.com/jpcurti/E3V3SE_display_klipper/blob/main/docs/img/wiring.png?raw=true)
  
+|Display    |   RPi |
+|-----------|-------|
+|VCC (5V)   | 2     |
+|GND        |6      |
+|TX         |10 (RX)|
+|RX         |8 (TX) |
+|A          |19     |
+|B          |26     |
+|ENTER      |13     |
+
 **Important - Credits**:
 -  This repository is heavily based on the [DWIN_T5UIC1_LCD](https://github.com/odwdinc/DWIN_T5UIC1_LCD) repository for the E3V2 display and makes use of most of the available classes and methods implemented there, with the necessary modifications for the E3V3SE display. All credits goes to the [author of the DWIN_T5UIC1_LCD project](https://github.com/odwdinc) for making the version which this repository is based on.
   
