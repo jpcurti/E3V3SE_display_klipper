@@ -2,9 +2,9 @@ import time
 import multitimer
 import atexit
 
-from .encoder import Encoder
-from .printerInterface import PrinterData
-from .TJC3224 import TJC3224_LCD
+from e3v3se_display.encoder import Encoder
+from e3v3se_display.printerInterface import PrinterData
+from e3v3se_display.TJC3224 import TJC3224_LCD
 
 
 from RPi import GPIO

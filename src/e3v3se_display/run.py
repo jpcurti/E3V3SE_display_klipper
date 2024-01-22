@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
+import sys
 import os
 import argparse
 import configparser
-from src.e3v3se_display.e3v3se_display import E3V3SE_DISPLAY
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from e3v3se_display.display_interface import E3V3SE_DISPLAY
 
 def load_config(config_file):
     if not os.path.isfile(config_file):

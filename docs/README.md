@@ -1,3 +1,5 @@
+[![PyPI version](https://badge.fury.io/py/e3v3se-display-klipper.svg)](https://pypi.org/project/e3v3se-display-klipper)
+[![Documentation](https://github.com/jpcurti/E3V3SE_display_klipper/actions/workflows/documentation.yml/badge.svg)](https://jpcurti.github.io/E3V3SE_display_klipper/)
 # Interface for the Creality Ender 3 V3 SE display running Klipper 
 
 This project allows you to use the original Creality E3V3SE (Ender 3 V3 SE) display with Klipper when connected directly to the host (at the moment a Raspberry pi only) via UART and GPIOs. It fetches the information from Klipper via the moonraker API and is able to send basic commands back, so that you can re-use the printer original display for some basic functionality.
@@ -6,9 +8,9 @@ As the E3V3SE communication protocol  with the display is (at the moment) not pu
 
 
 ## Installation
-### Via pip (tbd)
+### Via pip
 ``` sh
-pip install e3v3se_display_klipper
+pip install e3v3se-display-klipper
 e3v3se_display_klipper 
 ```
 ### By cloning the project
