@@ -4,7 +4,7 @@ import imutils
 import sys
 import os
 
-sys.path.insert(1, "../src")
+sys.path.insert(1, "../src/e3v3se_display")
 from TJC3224 import TJC3224_LCD
 
 """
