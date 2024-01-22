@@ -1,28 +1,31 @@
 # Reverse engineering the printer communication with display
 
-The Creality Ender 3 V3 SE printer uses a display from TJC ([Taojin Chi](https://www.tjc1688.com/)) with model nr. **TJC3224T132_011N_P04**. This was confirmed by searching the manufacturer website for similar products, like the [TJC3224T132_011N_A01](https://www.tjc1688.com/contents/7/136.html):
+The Creality Ender 3 V3 SE printer employs a display from TJC ([Taojin Chi](https://www.tjc1688.com/)) with the model number **TJC3224T132_011N_P04**. This was verified through examination of the manufacturer's website, particularly comparing it with a similar product, the [TJC3224T132_011N_A01](https://www.tjc1688.com/contents/7/136.html):
 
 ![Model comparison between printer and generic display on tjc website](img/TJC3224T132_011N_comparison.png)
 
-Searching for information on chinese electronics is a challenge, but it looks like the creality display is a customer version of the generic display which adds the buttons and a buzzer. More information such as libraries or instruction set could not be found, so that the only way to check the communication protocol is to spoof the uart between printer and display. To do so, a usb-uart converter was used, as shown:
+Uncovering information about Chinese electronics is a challenge, but indications suggest that the Creality display is a customized version of the generic display, incorporating additional features such as buttons and a buzzer. More information such as libraries or instruction set could not be found. Consequently, the only viable approach to decipher the communication protocol involves simulating the UART connection between the printer and the display. To achieve this, a USB-UART converter was employed, as illustrated
 
 ![Using a usb to serial converter as listener](img/serial_spoofing_config.png)
 
 
-Most displays, including this, communicate at 115200 baud per default. When turning the printer, the following messages were sent by the printer to the display:
+Typically, displays, including this one, communicate at 115200 baud by default. Upon powering up the printer, the following messages were transmitted from the printer to the display:
 
 ```
 AA 00 CC 33 C3 3C
 ```
 
-With that and a little bit of google, a [document that describes the instruction set of another display with similar protocol](https://www.dwin-global.com/uploads/T5L_TA-Instruction-Set-Development-Guide.pdf) was found. By logging the communication during navigation on the menu it was confirmed that most of the instructions are the same (if not all):
+With this information and a brief search, a [document that describes the instruction set of another display with similar protocol](https://www.dwin-global.com/uploads/T5L_TA-Instruction-Set-Development-Guide.pdf) was found. By logging communication during menu navigation, it was confirmed that most instructions align, but not entirely.
+
 ![Handshake instruction on T5L set](img/handshake_instruction_tl5.png)
 
-After that, it is a only a matter of listening to the communication while using the printer and understand how it works. This can be done by repeating the same commands as the printer sent via the computer in the following configuration:
+After that, it is a only a matter of listening to the communication while using the printer and understand how it works.This is achieved by replicating the same commands sent by the printer via a computer, configured as follows:
+
 ![Using a usb to serial converter as talker](img/replay_message_configuration.png)
+
 Note that the screen is still being powered by the printer. You can replace this by another 5V source, but (usually) not directly from the USB Serial converter, as it can't provide enough current to the display. 
 
- For example, the messages that the printer sends to the display when booting is:
+For example, the messages that the printer sends to the display when booting are:
 
 ```py
 # Turning printer On
@@ -65,7 +68,9 @@ AA 97 00 7F 00 F7 06 00 00 0E CC 33 C3 3C
 ```
 
 
-Icon Library findings:
+## Icon Library findings:
+
+Within the tools directory, a Python script has been made to iterate through all potential icons. This script serves the purpose of mapping each icon to its corresponding library and icon IDs, facilitating the identification of respective addresses. The script's functionality automates the process of associating icons with their specific library and ID combination, so that the respective addresses were found:
 
 Library goes from 0 to 65 ( 6 bits)
 
@@ -84,7 +89,6 @@ Library goes from 0 to 65 ( 6 bits)
 | Japanese  |  23 |
 | Korean  |  25 |
 | Gifs  |  27 |
-
 
 
 # Differences in the instruction set:
@@ -107,13 +111,10 @@ AA: header
 00F0: Y1 (240)
 
 ```
+Confirmation can be achieved by altering X0, Y0, X1, and Y1 and observing the screen. The same applies to other unknown parameters. Changing 0x82 to 0x81 does not move the screen, but changing it to 0x83 makes it move down. 
 
-We can confirm it by changing x0,y0,x1,y1 and checking the screen. The same for the other unknown parameters.
-Changing 0x82 for 0x81 doesnt move the screen, but to 0x83 makes it move down! Is this a custom command?
 
-raspberry pi pinout:
-![RPI pinout](img/rpi_pinout.png)
-
+## Other important information
 
 DISPLAY UART IS LOCATED ON PIN PA3,2 (USART 2)
 SERIAL_BRIDGE_CONFIG_USART2_PA3,PA2
