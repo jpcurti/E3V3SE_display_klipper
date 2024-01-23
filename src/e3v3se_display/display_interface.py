@@ -166,20 +166,18 @@ class E3V3SE_DISPLAY:
     # IMAGE LIBRARIES ID
     ICON = 0
     GIF_ICON = 27
-    LANGUAGE_Chinese = 2
-    LANGUAGE_English = 4
-    LANGUAGE_German = 6
-    LANGUAGE_Russian = 9
-    LANGUAGE_French = 12
-    LANGUAGE_Turkish = 15
-    LANGUAGE_Spanish = 17
-    LANGUAGE_Italian = 19
-    LANGUAGE_Portuguese = 21
-    LANGUAGE_Japanese = 23
-    LANGUAGE_Korean = 25
-
-    # Language
-    selected_language = LANGUAGE_English
+    language_chinese = 2
+    language_english = 4
+    language_german = 6
+    language_russian = 9
+    language_french = 12
+    language_turkish = 15
+    language_spanish = 17
+    language_italian = 19
+    language_portuguese = 21
+    language_japanese = 23
+    language_korean = 25
+   
 
     # ICON ID
     icon_logo = 0
@@ -440,8 +438,9 @@ class E3V3SE_DISPLAY:
     PREHEAT_CASE_TOTAL = PREHEAT_CASE_SAVE
 
     def __init__(
-        self, USARTx, baudrate, encoder_pins, button_pin, octoPrint_API_Key, Klipper_Socket
-    ):
+        self, USARTx, baudrate, encoder_pins, button_pin, octoPrint_API_Key, Klipper_Socket, language 
+    ):  
+        self.selected_language = language
         GPIO.setmode(GPIO.BCM)
         self.encoder = Encoder(encoder_pins[0], encoder_pins[1])
         self.button_pin = button_pin
