@@ -4,6 +4,8 @@
 
 This project allows you to use the original Creality E3V3SE (Ender 3 V3 SE) display with Klipper when connected directly to the host (at the moment a Raspberry pi only) via UART and GPIOs. It fetches the information from Klipper via the moonraker API and is able to send basic commands back, so that you can re-use the printer original display for some basic functionality.
 
+![Demonstration image](https://github.com/jpcurti/E3V3SE_display_klipper/blob/main/docs/img/demo.gif?raw=true)
+
 Considering that the communication protocol between E3V3SE and the display is presently undisclosed, the repository includes a [comprehensive guide on reverse engineering the communication protocol of such printers](/docs/tjc3224_reverse_engineering.md). This resource is invaluable for extending this capability to other 3D printers. Users are encouraged to customize the project to suit their specific printer models.
 
 
