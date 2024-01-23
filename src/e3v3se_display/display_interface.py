@@ -2,12 +2,10 @@ import time
 import multitimer
 import atexit
 
-from e3v3se_display.encoder import Encoder
+from e3v3se_display.virtual_encoder import Encoder
 from e3v3se_display.printerInterface import PrinterData
 from e3v3se_display.TJC3224 import TJC3224_LCD
-
-
-from RPi import GPIO
+from e3v3se_display.serial_port_manager import SerialPortManager
 
 
 def current_milli_time():
@@ -76,9 +74,6 @@ class E3V3SE_DISPLAY:
     STAT_CHR_W = 10
 
     dwin_abort_flag = False  # Flag to reset feedrate, return to Home
-
-    MSG_STOP_PRINT = "Stop Print"
-    MSG_PAUSE_PRINT = "Pausing..."
 
     scroll_up = 2
     scroll_down = 3
@@ -149,12 +144,6 @@ class E3V3SE_DISPLAY:
 
     MINUNITMULT = 10
 
-    ENCODER_DIFF_NO = 0  # no state
-    ENCODER_DIFF_CW = 1  # clockwise rotation
-    ENCODER_DIFF_CCW = 2  # counterclockwise rotation
-    ENCODER_DIFF_ENTER = 3  # click
-    ENCODER_WAIT = 80
-    ENCODER_WAIT_ENTER = 300
     EncoderRateLimit = True
 
     dwin_zoffset = 0.0
@@ -177,7 +166,6 @@ class E3V3SE_DISPLAY:
     language_portuguese = 21
     language_japanese = 23
     language_korean = 25
-   
 
     # ICON ID
     icon_logo = 0
@@ -437,24 +425,12 @@ class E3V3SE_DISPLAY:
     PREHEAT_CASE_SAVE = PREHEAT_CASE_FAN + 1
     PREHEAT_CASE_TOTAL = PREHEAT_CASE_SAVE
 
-    def __init__(
-        self, USARTx, baudrate, encoder_pins, button_pin, octoPrint_API_Key, Klipper_Socket, language 
-    ):  
+    def __init__(self, USARTx, baudrate, octoPrint_API_Key, Klipper_Socket, language):
         self.selected_language = language
-        GPIO.setmode(GPIO.BCM)
-        self.encoder = Encoder(encoder_pins[0], encoder_pins[1])
-        self.button_pin = button_pin
-        GPIO.setup(self.button_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-        GPIO.add_event_detect(
-            self.button_pin, GPIO.BOTH, callback=self.encoder_has_data
-        )
-        self.encoder.callback = self.encoder_has_data
-        self.EncodeLast = 0
-        self.EncodeMS = current_milli_time() + self.ENCODER_WAIT
-        self.EncodeEnter = current_milli_time() + self.ENCODER_WAIT_ENTER
+        self.serial_object = SerialPortManager(USARTx, baudrate)
         self.next_rts_update_ms = 0
         self.last_cardpercentValue = 101
-        self.lcd = TJC3224_LCD(USARTx, baudrate)
+        self.lcd = TJC3224_LCD(self.serial_object)
         self.checkkey = self.MainMenu
         self.pd = PrinterData(octoPrint_API_Key, Klipper_Socket)
         print("Testing Web-services")
@@ -464,6 +440,7 @@ class E3V3SE_DISPLAY:
             self.pd.init_Webservices()
         self.timer = multitimer.MultiTimer(interval=2, function=self.EachMomentUpdate)
         self.HMI_Init()
+        self.encoder = Encoder(self.serial_object, self.encoder_has_data)
         self.HMI_ShowBoot(3)
         self.HMI_StartFrame(True)
 
@@ -534,10 +511,10 @@ class E3V3SE_DISPLAY:
             self.Goto_MainMenu()
 
     def HMI_MainMenu(self):
-        encoder_diffState = self.get_encoder_state()
-        if encoder_diffState == self.ENCODER_DIFF_NO:
+        encoder_state = self.get_encoder_state()
+        if encoder_state == self.encoder.state_null:
             return
-        if encoder_diffState == self.ENCODER_DIFF_CW:
+        if encoder_state == self.encoder.state_rotation_right:
             if self.select_page.inc(4):
                 if self.select_page.now == 0:
                     self.icon_Print()
@@ -553,7 +530,7 @@ class E3V3SE_DISPLAY:
                         self.icon_Leveling(True)
                     else:
                         self.icon_StartInfo(True)
-        elif encoder_diffState == self.ENCODER_DIFF_CCW:
+        elif encoder_state == self.encoder.state_rotation_left:
             if self.select_page.dec():
                 if self.select_page.now == 0:
                     self.icon_Print()
@@ -572,7 +549,7 @@ class E3V3SE_DISPLAY:
                         self.icon_Leveling(True)
                     else:
                         self.icon_StartInfo(True)
-        elif encoder_diffState == self.ENCODER_DIFF_ENTER:
+        elif encoder_state == self.encoder.state_click:
             if self.select_page.now == 0:  # Print File
                 self.checkkey = self.SelectFile
                 self.Draw_Print_File_Menu()
@@ -599,13 +576,13 @@ class E3V3SE_DISPLAY:
                     self.Draw_Info_Menu()
 
     def HMI_SelectFile(self):
-        encoder_diffState = self.get_encoder_state()
-        if encoder_diffState == self.ENCODER_DIFF_NO:
+        encoder_state = self.get_encoder_state()
+        if encoder_state == self.encoder.state_null:
             return
 
         fullCnt = len(self.pd.GetFiles(refresh=True))
 
-        if encoder_diffState == self.ENCODER_DIFF_CW and fullCnt:
+        if encoder_state == self.encoder.state_rotation_right and fullCnt:
             if self.select_file.inc(1 + fullCnt):
                 itemnum = self.select_file.now - 1  # -1 for "Back"
                 if (
@@ -621,7 +598,7 @@ class E3V3SE_DISPLAY:
                     self.Move_Highlight(
                         1, self.select_file.now + self.MROWS - self.index_file
                     )  # Just move highlight
-        elif encoder_diffState == self.ENCODER_DIFF_CCW and fullCnt:
+        elif encoder_state == self.encoder.state_rotation_left and fullCnt:
             if self.select_file.dec():
                 itemnum = self.select_file.now - 1  # -1 for "Back"
                 if (
@@ -639,7 +616,7 @@ class E3V3SE_DISPLAY:
                     self.Move_Highlight(
                         -1, self.select_file.now + self.MROWS - self.index_file
                     )  # Just move highlight
-        elif encoder_diffState == self.ENCODER_DIFF_ENTER:
+        elif encoder_state == self.encoder.state_click:
             if self.select_file.now == 0:  # Back
                 self.select_page.set(0)
                 self.Goto_MainMenu()
@@ -662,11 +639,11 @@ class E3V3SE_DISPLAY:
         This function handles the logic for scrolling through the prepare menu options,
         selecting different actions, and executing the corresponding actions based on user input.
         """
-        encoder_diffState = self.get_encoder_state()
-        if encoder_diffState == self.ENCODER_DIFF_NO:
+        encoder_state = self.get_encoder_state()
+        if encoder_state == self.encoder.state_null:
             return
 
-        if encoder_diffState == self.ENCODER_DIFF_CW:
+        if encoder_state == self.encoder.state_rotation_right:
             if self.select_prepare.inc(1 + self.PREPARE_CASE_TOTAL):
                 if (
                     self.select_prepare.now > self.MROWS
@@ -695,7 +672,7 @@ class E3V3SE_DISPLAY:
                         1, self.select_prepare.now + self.MROWS - self.index_prepare
                     )
 
-        elif encoder_diffState == self.ENCODER_DIFF_CCW:
+        elif encoder_state == self.encoder.state_rotation_left:
             if self.select_prepare.dec():
                 if self.select_prepare.now < self.index_prepare - self.MROWS:
                     self.index_prepare -= 1
@@ -722,7 +699,7 @@ class E3V3SE_DISPLAY:
                         -1, self.select_prepare.now + self.MROWS - self.index_prepare
                     )
 
-        elif encoder_diffState == self.ENCODER_DIFF_ENTER:
+        elif encoder_state == self.encoder.state_click:
             if self.select_prepare.now == 0:  # Back
                 self.select_page.set(1)
                 self.Goto_MainMenu()
@@ -780,11 +757,11 @@ class E3V3SE_DISPLAY:
                 self.Draw_Prepare_Menu()
 
     def HMI_Control(self):
-        encoder_diffState = self.get_encoder_state()
-        if encoder_diffState == self.ENCODER_DIFF_NO:
+        encoder_state = self.get_encoder_state()
+        if encoder_state == self.encoder.state_null:
             return
 
-        if encoder_diffState == self.ENCODER_DIFF_CW:
+        if encoder_state == self.encoder.state_rotation_right:
             if self.select_control.inc(1 + self.CONTROL_CASE_TOTAL):
                 if (
                     self.select_control.now > self.MROWS
@@ -818,7 +795,7 @@ class E3V3SE_DISPLAY:
                     self.Move_Highlight(
                         1, self.select_control.now + self.MROWS - self.index_control
                     )
-        elif encoder_diffState == self.ENCODER_DIFF_CCW:
+        elif encoder_state == self.encoder.state_rotation_left:
             if self.select_control.dec():
                 if self.select_control.now < self.index_control - self.MROWS:
                     self.index_control -= 1
@@ -839,7 +816,7 @@ class E3V3SE_DISPLAY:
                     self.Move_Highlight(
                         -1, self.select_control.now + self.MROWS - self.index_control
                     )
-        elif encoder_diffState == self.ENCODER_DIFF_ENTER:
+        elif encoder_state == self.encoder.state_click:
             if self.select_control.now == 0:  # Back
                 self.select_page.set(2)
                 self.Goto_MainMenu()
@@ -864,10 +841,10 @@ class E3V3SE_DISPLAY:
         the user presses the confirmation, he needs to go back to
         where he came from.
         """
-        encoder_diffState = self.get_encoder_state()
-        if encoder_diffState == self.ENCODER_DIFF_NO:
+        encoder_state = self.get_encoder_state()
+        if encoder_state == self.encoder.state_null:
             return
-        if encoder_diffState == self.ENCODER_DIFF_ENTER:
+        if encoder_state == self.encoder.state_click:
             self.checkkey = self.popup_caller
             if self.popup_caller == self.MainMenu:
                 self.Goto_MainMenu()
@@ -875,10 +852,10 @@ class E3V3SE_DISPLAY:
                 self.Draw_Motion_Menu()
 
     def HMI_Info(self):
-        encoder_diffState = self.get_encoder_state()
-        if encoder_diffState == self.ENCODER_DIFF_NO:
+        encoder_state = self.get_encoder_state()
+        if encoder_state == self.encoder.state_null:
             return
-        if encoder_diffState == self.ENCODER_DIFF_ENTER:
+        if encoder_state == self.encoder.state_click:
             if self.pd.HAS_ONESTEP_LEVELING:
                 self.checkkey = self.Control
                 self.select_control.set(self.CONTROL_CASE_INFO)
@@ -888,16 +865,16 @@ class E3V3SE_DISPLAY:
                 self.Goto_MainMenu()
 
     def HMI_Printing(self):
-        encoder_diffState = self.get_encoder_state()
-        if encoder_diffState == self.ENCODER_DIFF_NO:
+        encoder_state = self.get_encoder_state()
+        if encoder_state == self.encoder.state_null:
             return
         if self.pd.HMI_flag.done_confirm_flag:
-            if encoder_diffState == self.ENCODER_DIFF_ENTER:
+            if encoder_state == self.encoder.state_click:
                 self.pd.HMI_flag.done_confirm_flag = False
                 self.dwin_abort_flag = True  # Reset feedrate, return to Home
             return
 
-        if encoder_diffState == self.ENCODER_DIFF_CW:
+        if encoder_state == self.encoder.state_rotation_right:
             if self.select_print.inc(3):
                 if self.select_print.now == 0:
                     self.show_tune()
@@ -913,7 +890,7 @@ class E3V3SE_DISPLAY:
                     else:
                         self.show_pause()
                     self.show_stop()
-        elif encoder_diffState == self.ENCODER_DIFF_CCW:
+        elif encoder_state == self.encoder.state_rotation_left:
             if self.select_print.dec():
                 if self.select_print.now == 0:
                     self.show_tune()
@@ -929,7 +906,7 @@ class E3V3SE_DISPLAY:
                     self.show_stop()
                 elif self.select_print.now == 2:
                     self.show_stop()
-        elif encoder_diffState == self.ENCODER_DIFF_ENTER:
+        elif encoder_state == self.encoder.state_click:
             if self.select_print.now == 0:  # Tune
                 self.checkkey = self.Tune
                 self.pd.HMI_ValueStruct.show_mode = 0
@@ -951,14 +928,14 @@ class E3V3SE_DISPLAY:
 
     # Pause and Stop window */
     def HMI_PauseOrStop(self):
-        encoder_diffState = self.get_encoder_state()
-        if encoder_diffState == self.ENCODER_DIFF_NO:
+        encoder_state = self.get_encoder_state()
+        if encoder_state == self.encoder.state_null:
             return
-        if encoder_diffState == self.ENCODER_DIFF_CW:
+        if encoder_state == self.encoder.state_rotation_right:
             self.Draw_Select_Highlight(False)
-        elif encoder_diffState == self.ENCODER_DIFF_CCW:
+        elif encoder_state == self.encoder.state_rotation_left:
             self.Draw_Select_Highlight(True)
-        elif encoder_diffState == self.ENCODER_DIFF_ENTER:
+        elif encoder_state == self.encoder.state_click:
             if self.select_print.now == 1:  # pause window
                 if self.pd.HMI_flag.select_flag:
                     self.pd.HMI_flag.pause_action = True
@@ -975,10 +952,10 @@ class E3V3SE_DISPLAY:
 
     # Tune  */
     def HMI_Tune(self):
-        encoder_diffState = self.get_encoder_state()
-        if encoder_diffState == self.ENCODER_DIFF_NO:
+        encoder_state = self.get_encoder_state()
+        if encoder_state == self.encoder.state_null:
             return
-        if encoder_diffState == self.ENCODER_DIFF_CW:
+        if encoder_state == self.encoder.state_rotation_right:
             if self.select_tune.inc(1 + self.TUNE_CASE_TOTAL):
                 if (
                     self.select_tune.now > self.MROWS
@@ -990,7 +967,7 @@ class E3V3SE_DISPLAY:
                     self.Move_Highlight(
                         1, self.select_tune.now + self.MROWS - self.index_tune
                     )
-        elif encoder_diffState == self.ENCODER_DIFF_CCW:
+        elif encoder_state == self.encoder.state_rotation_left:
             if self.select_tune.dec():
                 if self.select_tune.now < self.index_tune - self.MROWS:
                     self.index_tune -= 1
@@ -1001,7 +978,7 @@ class E3V3SE_DISPLAY:
                     self.Move_Highlight(
                         -1, self.select_tune.now + self.MROWS - self.index_tune
                     )
-        elif encoder_diffState == self.ENCODER_DIFF_ENTER:
+        elif encoder_state == self.encoder.state_click:
             if self.select_tune.now == 0:  # Back
                 self.select_print.set(0)
                 self.Goto_PrintProcess()
@@ -1036,17 +1013,17 @@ class E3V3SE_DISPLAY:
                 )
 
     def HMI_PrintSpeed(self):
-        encoder_diffState = self.get_encoder_state()
-        if encoder_diffState == self.ENCODER_DIFF_NO:
+        encoder_state = self.get_encoder_state()
+        if encoder_state == self.encoder.state_null:
             return
 
-        if encoder_diffState == self.ENCODER_DIFF_CW:
+        if encoder_state == self.encoder.state_rotation_right:
             self.pd.HMI_ValueStruct.print_speed += 1
 
-        elif encoder_diffState == self.ENCODER_DIFF_CCW:
+        elif encoder_state == self.encoder.state_rotation_left:
             self.pd.HMI_ValueStruct.print_speed -= 1
 
-        elif encoder_diffState == self.ENCODER_DIFF_ENTER:
+        elif encoder_state == self.encoder.state_click:
             self.checkkey = self.Tune
             self.encoderRate = True
             self.pd.set_feedrate(self.pd.HMI_ValueStruct.print_speed)
@@ -1071,15 +1048,15 @@ class E3V3SE_DISPLAY:
         This function checks the encoder state and performs the corresponding action based on the state.
         It updates the display and handles the movement of the X, Y, Z axes, and the extruder.
         """
-        encoder_diffState = self.get_encoder_state()
-        if encoder_diffState == self.ENCODER_DIFF_NO:
+        encoder_state = self.get_encoder_state()
+        if encoder_state == self.encoder.state_null:
             return
 
         # In case of "nozzle too cold" popup is on the screen
         if self.pd.PREVENT_COLD_EXTRUSION:
             if self.pd.HMI_flag.ETempTooLow_flag:
                 # Resuming after "nozzle too cold" popup should clear the flag and draw move menu again
-                if encoder_diffState == self.ENCODER_DIFF_ENTER:
+                if encoder_state == self.encoder.state_click:
                     self.pd.HMI_flag.ETempTooLow_flag = False
                     self.pd.current_position.e = (
                         self.pd.HMI_ValueStruct.Move_E_scale
@@ -1088,13 +1065,13 @@ class E3V3SE_DISPLAY:
                 return
 
         # Avoid flicker by updating only the previous menu
-        if encoder_diffState == self.ENCODER_DIFF_CW:
+        if encoder_state == self.encoder.state_rotation_right:
             if self.select_axis.inc(1 + 4):
                 self.Move_Highlight(1, self.select_axis.now)
-        elif encoder_diffState == self.ENCODER_DIFF_CCW:
+        elif encoder_state == self.encoder.state_rotation_left:
             if self.select_axis.dec():
                 self.Move_Highlight(-1, self.select_axis.now)
-        elif encoder_diffState == self.ENCODER_DIFF_ENTER:
+        elif encoder_state == self.encoder.state_click:
             selected_line = self.select_axis.now
             if selected_line == 0:  # Back
                 self.checkkey = self.Prepare
@@ -1189,10 +1166,10 @@ class E3V3SE_DISPLAY:
         """
         Handles the X axis move logic based on the encoder input.
         """
-        encoder_diffState = self.get_encoder_state()
-        if encoder_diffState == self.ENCODER_DIFF_NO:
+        encoder_state = self.get_encoder_state()
+        if encoder_state == self.encoder.state_null:
             return
-        elif encoder_diffState == self.ENCODER_DIFF_ENTER:
+        elif encoder_state == self.encoder.state_click:
             # Enable change in Move X value, draw text as yellow
             self.checkkey = self.AxisMove
             self.EncoderRateLimit = True
@@ -1212,9 +1189,9 @@ class E3V3SE_DISPLAY:
             self.pd.moveAbsolute("X", self.pd.current_position.x, 5000)
 
             return
-        elif encoder_diffState == self.ENCODER_DIFF_CW:
+        elif encoder_state == self.encoder.state_rotation_right:
             self.pd.HMI_ValueStruct.Move_X_scale += 1
-        elif encoder_diffState == self.ENCODER_DIFF_CCW:
+        elif encoder_state == self.encoder.state_rotation_left:
             self.pd.HMI_ValueStruct.Move_X_scale -= 1
 
         if (
@@ -1252,10 +1229,10 @@ class E3V3SE_DISPLAY:
         """
         Handles the Y axis move logic based on the encoder input.
         """
-        encoder_diffState = self.get_encoder_state()
-        if encoder_diffState == self.ENCODER_DIFF_NO:
+        encoder_state = self.get_encoder_state()
+        if encoder_state == self.encoder.state_null:
             return
-        elif encoder_diffState == self.ENCODER_DIFF_ENTER:
+        elif encoder_state == self.encoder.state_click:
             self.checkkey = self.AxisMove
             self.EncoderRateLimit = True
             self.lcd.draw_float_value(
@@ -1275,9 +1252,9 @@ class E3V3SE_DISPLAY:
             self.pd.moveAbsolute("Y", self.pd.current_position.y, 5000)
 
             return
-        elif encoder_diffState == self.ENCODER_DIFF_CW:
+        elif encoder_state == self.encoder.state_rotation_right:
             self.pd.HMI_ValueStruct.Move_Y_scale += 1
-        elif encoder_diffState == self.ENCODER_DIFF_CCW:
+        elif encoder_state == self.encoder.state_rotation_left:
             self.pd.HMI_ValueStruct.Move_Y_scale -= 1
 
         if (
@@ -1315,10 +1292,10 @@ class E3V3SE_DISPLAY:
         """
         Handles the Z axis move logic based on the encoder input.
         """
-        encoder_diffState = self.get_encoder_state()
-        if encoder_diffState == self.ENCODER_DIFF_NO:
+        encoder_state = self.get_encoder_state()
+        if encoder_state == self.encoder.state_null:
             return
-        elif encoder_diffState == self.ENCODER_DIFF_ENTER:
+        elif encoder_state == self.encoder.state_click:
             self.checkkey = self.AxisMove
             self.EncoderRateLimit = True
             self.lcd.draw_float_value(
@@ -1337,9 +1314,9 @@ class E3V3SE_DISPLAY:
             self.pd.moveAbsolute("Z", self.pd.current_position.z, 600)
 
             return
-        elif encoder_diffState == self.ENCODER_DIFF_CW:
+        elif encoder_state == self.encoder.state_rotation_right:
             self.pd.HMI_ValueStruct.Move_Z_scale += 1
-        elif encoder_diffState == self.ENCODER_DIFF_CCW:
+        elif encoder_state == self.encoder.state_rotation_left:
             self.pd.HMI_ValueStruct.Move_Z_scale -= 1
 
         if (
@@ -1378,11 +1355,11 @@ class E3V3SE_DISPLAY:
         Handles the Extruder move logic based on the encoder input.
         """
         self.pd.last_E_scale = 0
-        encoder_diffState = self.get_encoder_state()
-        if encoder_diffState == self.ENCODER_DIFF_NO:
+        encoder_state = self.get_encoder_state()
+        if encoder_state == self.encoder.state_null:
             return
 
-        elif encoder_diffState == self.ENCODER_DIFF_ENTER:
+        elif encoder_state == self.encoder.state_click:
             self.checkkey = self.AxisMove
             self.EncoderRateLimit = True
             self.pd.last_E_scale = self.pd.HMI_ValueStruct.Move_E_scale
@@ -1399,9 +1376,9 @@ class E3V3SE_DISPLAY:
             )
             self.pd.moveAbsolute("E", self.pd.current_position.e, 300)
 
-        elif encoder_diffState == self.ENCODER_DIFF_CW:
+        elif encoder_state == self.encoder.state_rotation_right:
             self.pd.HMI_ValueStruct.Move_E_scale += 1
-        elif encoder_diffState == self.ENCODER_DIFF_CCW:
+        elif encoder_state == self.encoder.state_rotation_left:
             self.pd.HMI_ValueStruct.Move_E_scale -= 1
 
         if (self.pd.HMI_ValueStruct.Move_E_scale - self.pd.last_E_scale) > (
@@ -1430,17 +1407,17 @@ class E3V3SE_DISPLAY:
         )
 
     def HMI_Temperature(self):
-        encoder_diffState = self.get_encoder_state()
-        if encoder_diffState == self.ENCODER_DIFF_NO:
+        encoder_state = self.get_encoder_state()
+        if encoder_state == self.encoder.state_null:
             return
 
-        if encoder_diffState == self.ENCODER_DIFF_CW:
+        if encoder_state == self.encoder.state_rotation_right:
             if self.select_temp.inc(1 + self.TEMP_CASE_TOTAL):
                 self.Move_Highlight(1, self.select_temp.now)
-        elif encoder_diffState == self.ENCODER_DIFF_CCW:
+        elif encoder_state == self.encoder.state_rotation_left:
             if self.select_temp.dec():
                 self.Move_Highlight(-1, self.select_temp.now)
-        elif encoder_diffState == self.ENCODER_DIFF_ENTER:
+        elif encoder_state == self.encoder.state_click:
             if self.select_temp.now == 0:  # back
                 self.checkkey = self.Control
                 self.select_control.set(1)
@@ -1640,17 +1617,17 @@ class E3V3SE_DISPLAY:
                 )  # Save TPU configuration
 
     def HMI_PLAPreheatSetting(self):
-        encoder_diffState = self.get_encoder_state()
-        if encoder_diffState == self.ENCODER_DIFF_NO:
+        encoder_state = self.get_encoder_state()
+        if encoder_state == self.encoder.state_null:
             return
         # Avoid flicker by updating only the previous menu
-        elif encoder_diffState == self.ENCODER_DIFF_CW:
+        elif encoder_state == self.encoder.state_rotation_right:
             if self.select_PLA.inc(1 + self.PREHEAT_CASE_TOTAL):
                 self.Move_Highlight(1, self.select_PLA.now)
-        elif encoder_diffState == self.ENCODER_DIFF_CCW:
+        elif encoder_state == self.encoder.state_rotation_left:
             if self.select_PLA.dec():
                 self.Move_Highlight(-1, self.select_PLA.now)
-        elif encoder_diffState == self.ENCODER_DIFF_ENTER:
+        elif encoder_state == self.encoder.state_click:
             if self.select_PLA.now == 0:  # Back
                 self.checkkey = self.TemperatureID
                 self.select_temp.now = self.TEMP_CASE_PLA
@@ -1711,17 +1688,17 @@ class E3V3SE_DISPLAY:
                 self.HMI_AudioFeedback(success)
 
     def HMI_TPUPreheatSetting(self):
-        encoder_diffState = self.get_encoder_state()
-        if encoder_diffState == self.ENCODER_DIFF_NO:
+        encoder_state = self.get_encoder_state()
+        if encoder_state == self.encoder.state_null:
             return
         # Avoid flicker by updating only the previous menu
-        elif encoder_diffState == self.ENCODER_DIFF_CW:
+        elif encoder_state == self.encoder.state_rotation_right:
             if self.select_TPU.inc(1 + self.PREHEAT_CASE_TOTAL):
                 self.Move_Highlight(1, self.select_TPU.now)
-        elif encoder_diffState == self.ENCODER_DIFF_CCW:
+        elif encoder_state == self.encoder.state_rotation_left:
             if self.select_TPU.dec():
                 self.Move_Highlight(-1, self.select_TPU.now)
-        elif encoder_diffState == self.ENCODER_DIFF_ENTER:
+        elif encoder_state == self.encoder.state_click:
             if self.select_TPU.now == 0:  # Back
                 self.checkkey = self.TemperatureID
                 self.select_temp.now = self.TEMP_CASE_TPU
@@ -1784,8 +1761,8 @@ class E3V3SE_DISPLAY:
                 self.HMI_AudioFeedback(success)
 
     def HMI_ETemp(self):
-        encoder_diffState = self.get_encoder_state()
-        if encoder_diffState == self.ENCODER_DIFF_NO:
+        encoder_state = self.get_encoder_state()
+        if encoder_state == self.encoder.state_null:
             return
 
         if self.pd.HMI_ValueStruct.show_mode == -1:
@@ -1797,7 +1774,7 @@ class E3V3SE_DISPLAY:
         else:
             temp_line = self.TUNE_CASE_TEMP + self.MROWS - self.index_tune
 
-        if encoder_diffState == self.ENCODER_DIFF_ENTER:
+        if encoder_state == self.encoder.state_click:
             self.EncoderRateLimit = True
             if self.pd.HMI_ValueStruct.show_mode == -1:  # temperature
                 self.checkkey = self.TemperatureID
@@ -1862,10 +1839,10 @@ class E3V3SE_DISPLAY:
                 self.pd.setTargetHotend(self.pd.HMI_ValueStruct.E_Temp, 0)
             return
 
-        elif encoder_diffState == self.ENCODER_DIFF_CW:
+        elif encoder_state == self.encoder.state_rotation_right:
             self.pd.HMI_ValueStruct.E_Temp += 1
 
-        elif encoder_diffState == self.ENCODER_DIFF_CCW:
+        elif encoder_state == self.encoder.state_rotation_left:
             self.pd.HMI_ValueStruct.E_Temp -= 1
 
         # E_Temp limit
@@ -1888,8 +1865,8 @@ class E3V3SE_DISPLAY:
         )
 
     def HMI_BedTemp(self):
-        encoder_diffState = self.get_encoder_state()
-        if encoder_diffState == self.ENCODER_DIFF_NO:
+        encoder_state = self.get_encoder_state()
+        if encoder_state == self.encoder.state_null:
             return
 
         if self.pd.HMI_ValueStruct.show_mode == -1:
@@ -1901,7 +1878,7 @@ class E3V3SE_DISPLAY:
         else:
             bed_line = self.TUNE_CASE_TEMP + self.MROWS - self.index_tune
 
-        if encoder_diffState == self.ENCODER_DIFF_ENTER:
+        if encoder_state == self.encoder.state_click:
             self.EncoderRateLimit = True
             if self.pd.HMI_ValueStruct.show_mode == -1:  # temperature
                 self.checkkey = self.TemperatureID
@@ -1966,10 +1943,10 @@ class E3V3SE_DISPLAY:
                 self.pd.setTargetHotend(self.pd.HMI_ValueStruct.Bed_Temp, 0)
             return
 
-        elif encoder_diffState == self.ENCODER_DIFF_CW:
+        elif encoder_state == self.encoder.state_rotation_right:
             self.pd.HMI_ValueStruct.Bed_Temp += 1
 
-        elif encoder_diffState == self.ENCODER_DIFF_CCW:
+        elif encoder_state == self.encoder.state_rotation_left:
             self.pd.HMI_ValueStruct.Bed_Temp -= 1
 
         # Bed_Temp limit
@@ -1994,16 +1971,16 @@ class E3V3SE_DISPLAY:
     # ---------------------Todo--------------------------------#
 
     def HMI_Motion(self):
-        encoder_diffState = self.get_encoder_state()
-        if encoder_diffState == self.ENCODER_DIFF_NO:
+        encoder_state = self.get_encoder_state()
+        if encoder_state == self.encoder.state_null:
             return
-        if encoder_diffState == self.ENCODER_DIFF_CW:
+        if encoder_state == self.encoder.state_rotation_right:
             if self.select_motion.inc(1 + self.MOTION_CASE_TOTAL):
                 self.Move_Highlight(1, self.select_motion.now)
-        elif encoder_diffState == self.ENCODER_DIFF_CCW:
+        elif encoder_state == self.encoder.state_rotation_left:
             if self.select_motion.dec():
                 self.Move_Highlight(-1, self.select_motion.now)
-        elif encoder_diffState == self.ENCODER_DIFF_ENTER:
+        elif encoder_state == self.encoder.state_click:
             if self.select_motion.now == 0:  # back
                 self.checkkey = self.Control
                 self.select_control.set(self.CONTROL_CASE_MOVE)
@@ -2019,8 +1996,8 @@ class E3V3SE_DISPLAY:
                 self.Draw_FeatureNotAvailable_Popup()
 
     def HMI_Zoffset(self):
-        encoder_diffState = self.get_encoder_state()
-        if encoder_diffState == self.ENCODER_DIFF_NO:
+        encoder_state = self.get_encoder_state()
+        if encoder_state == self.encoder.state_null:
             return
         zoff_line = 0
         if self.pd.HMI_ValueStruct.show_mode == -4:
@@ -2029,7 +2006,7 @@ class E3V3SE_DISPLAY:
             zoff_line = self.TUNE_CASE_ZOFF + self.MROWS - self.index_tune
 
         if (
-            encoder_diffState == self.ENCODER_DIFF_ENTER
+            encoder_state == self.encoder.state_click
         ):  # if (applyencoder(encoder_diffstate, offset_value))
             self.EncoderRateLimit = True
             if self.pd.HAS_BED_PROBE:
@@ -2054,9 +2031,9 @@ class E3V3SE_DISPLAY:
 
             return
 
-        elif encoder_diffState == self.ENCODER_DIFF_CW:
+        elif encoder_state == self.encoder.state_rotation_right:
             self.pd.HMI_ValueStruct.offset_value += 1
-        elif encoder_diffState == self.ENCODER_DIFF_CCW:
+        elif encoder_state == self.encoder.state_rotation_left:
             self.pd.HMI_ValueStruct.offset_value -= 1
 
         if (
@@ -2092,43 +2069,43 @@ class E3V3SE_DISPLAY:
         )
 
     def HMI_MaxSpeed(self):
-        encoder_diffState = self.get_encoder_state()
-        if encoder_diffState == self.ENCODER_DIFF_NO:
+        encoder_state = self.get_encoder_state()
+        if encoder_state == self.encoder.state_null:
             return
 
     def HMI_MaxAcceleration(self):
-        encoder_diffState = self.get_encoder_state()
-        if encoder_diffState == self.ENCODER_DIFF_NO:
+        encoder_state = self.get_encoder_state()
+        if encoder_state == self.encoder.state_null:
             return
 
     def HMI_MaxJerk(self):
-        encoder_diffState = self.get_encoder_state()
-        if encoder_diffState == self.ENCODER_DIFF_NO:
+        encoder_state = self.get_encoder_state()
+        if encoder_state == self.encoder.state_null:
             return
 
     def HMI_Step(self):
-        encoder_diffState = self.get_encoder_state()
-        if encoder_diffState == self.ENCODER_DIFF_NO:
+        encoder_state = self.get_encoder_state()
+        if encoder_state == self.encoder.state_null:
             return
 
     def HMI_MaxFeedspeedXYZE(self):
-        encoder_diffState = self.get_encoder_state()
-        if encoder_diffState == self.ENCODER_DIFF_NO:
+        encoder_state = self.get_encoder_state()
+        if encoder_state == self.encoder.state_null:
             return
 
     def HMI_MaxAccelerationXYZE(self):
-        encoder_diffState = self.get_encoder_state()
-        if encoder_diffState == self.ENCODER_DIFF_NO:
+        encoder_state = self.get_encoder_state()
+        if encoder_state == self.encoder.state_null:
             return
 
     def HMI_MaxJerkXYZE(self):
-        encoder_diffState = self.get_encoder_state()
-        if encoder_diffState == self.ENCODER_DIFF_NO:
+        encoder_state = self.get_encoder_state()
+        if encoder_state == self.encoder.state_null:
             return
 
     def HMI_StepXYZE(self):
-        encoder_diffState = self.get_encoder_state()
-        if encoder_diffState == self.ENCODER_DIFF_NO:
+        encoder_state = self.get_encoder_state()
+        if encoder_state == self.encoder.state_null:
             return
 
     # --------------------------------------------------------------#
@@ -3682,24 +3659,7 @@ class E3V3SE_DISPLAY:
             self.HMI_FeatureNotAvailable()
 
     def get_encoder_state(self):
-        if self.EncoderRateLimit:
-            if self.EncodeMS > current_milli_time():
-                return self.ENCODER_DIFF_NO
-            self.EncodeMS = current_milli_time() + self.ENCODER_WAIT
-
-        if self.encoder.value < self.EncodeLast:
-            self.EncodeLast = self.encoder.value
-            return self.ENCODER_DIFF_CW
-        elif self.encoder.value > self.EncodeLast:
-            self.EncodeLast = self.encoder.value
-            return self.ENCODER_DIFF_CCW
-        elif not GPIO.input(self.button_pin):
-            if self.EncodeEnter > current_milli_time():  # prevent double clicks
-                return self.ENCODER_DIFF_NO
-            self.EncodeEnter = current_milli_time() + self.ENCODER_WAIT_ENTER
-            return self.ENCODER_DIFF_ENTER
-        else:
-            return self.ENCODER_DIFF_NO
+        return self.encoder.getValue()
 
     def HMI_AudioFeedback(self, success=True):
         if success:

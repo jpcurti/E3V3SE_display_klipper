@@ -35,16 +35,12 @@ def main():
     parser.add_argument('--config', help='Configuration file location', default= 'config.ini')
     parser.add_argument('--com_port', help='COM Port that the display is connected to')
     parser.add_argument('--baud', type=int, help='Baudrate')
-    parser.add_argument('--gpio_wheel_button_left', type=int, help='Rpi GPIO connected to pin B from display')
-    parser.add_argument('--gpio_wheel_button_right', type=int, help='Rpi GPIO connected to pin A from display')
-    parser.add_argument('--gpio_wheel_button_click', type=int, help='Rpi GPIO connected to pin ENTER from display')
     parser.add_argument('--klipper_api_key', help='Klipper API key')
     parser.add_argument('--klipper_socket', help='Klipper socket on host')
     parser.add_argument('--language', help='Language, see docs for available languages')
    
     
     args = parser.parse_args()
-    args_received = False
     
     if args.config :
         config = load_config(args.config)
@@ -53,12 +49,6 @@ def main():
                 args.com_port = config.get('Display', 'com_port')
             if not args.baud:
                 args.baud = config.get('Display', 'baud')
-            if not args.gpio_wheel_button_left:
-                args.gpio_wheel_button_left = config.getint('Display', 'gpio_wheel_button_left')
-            if not args.gpio_wheel_button_right:
-                args.gpio_wheel_button_right = config.getint('Display', 'gpio_wheel_button_right')
-            if not args.gpio_wheel_button_click:
-                args.gpio_wheel_button_click = config.getint('Display', 'gpio_wheel_button_click')
             if not args.klipper_api_key:
                 args.klipper_api_key = config.get('Klipper', 'klipper_api_key')
             if not args.klipper_socket:
@@ -74,8 +64,6 @@ def main():
     display = E3V3SE_DISPLAY(
         args.com_port,
         args.baud,
-        (args.gpio_wheel_button_left, args.gpio_wheel_button_right),
-        args.gpio_wheel_button_click,
         args.klipper_api_key,
         args.klipper_socket,
         languages.get(args.language)

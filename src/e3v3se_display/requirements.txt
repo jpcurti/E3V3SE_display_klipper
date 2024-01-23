@@ -1,6 +1,7 @@
-imutils==0.5.4
+certifi==2023.11.17
+charset-normalizer==3.3.2
+idna==3.6
 multitimer==0.3
-pyserial==3.5b0
+pyserial==3.5
 requests==2.31.0
-python3-rpi.gpio
-
+urllib3==2.1.0

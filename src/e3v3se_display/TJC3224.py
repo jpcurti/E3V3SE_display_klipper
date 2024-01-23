@@ -3,7 +3,6 @@ import math
 import serial
 import struct
 
-
 class TJC3224_LCD:
     """
     Class representing the control interface for a TJC3224 LCD display.
@@ -59,7 +58,7 @@ class TJC3224_LCD:
     direction_up = 0x02
     direction_down = 0x03
 
-    def __init__(self, port, baud_rate):
+    def __init__(self, serial_manager = None, port= None, baud_rate = None):
         """
         Initializes the TJC3224_LCD object.
 
@@ -67,8 +66,12 @@ class TJC3224_LCD:
             port (str): The port to which the LCD is connected.
             baud_rate (int): Baud rate for serial communication.
         """
-        self.serial = serial.Serial(port, baud_rate, timeout=1)
-
+        if serial_manager:
+            self.serial = serial_manager
+        elif port and baud_rate:
+            self.serial = serial.Serial(port, baud_rate, timeout=1)
+        else:
+            return
         print("Sending handshake... ")
         while not self.handshake():
             pass
