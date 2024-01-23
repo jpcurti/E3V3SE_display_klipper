@@ -8,6 +8,20 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 from e3v3se_display.display_interface import E3V3SE_DISPLAY
 
+languages = {
+    'chinese': 2,
+    'english': 4,
+    'german': 6,
+    'russian': 9,
+    'french': 12,
+    'turkish': 15,
+    'spanish': 17,
+    'italian': 19,
+    'portuguese': 21,
+    'japanese': 23,
+    'korean': 25
+}
+
 def load_config(config_file):
     if not os.path.isfile(config_file):
         print(f"Error: {config_file} is not a valid file.")
@@ -26,6 +40,7 @@ def main():
     parser.add_argument('--gpio_wheel_button_click', type=int, help='Rpi GPIO connected to pin ENTER from display')
     parser.add_argument('--klipper_api_key', help='Klipper API key')
     parser.add_argument('--klipper_socket', help='Klipper socket on host')
+    parser.add_argument('--language', help='Language, see docs for available languages')
    
     
     args = parser.parse_args()
@@ -48,6 +63,8 @@ def main():
                 args.klipper_api_key = config.get('Klipper', 'klipper_api_key')
             if not args.klipper_socket:
                 args.klipper_socket = config.get('Klipper', 'klipper_socket')
+            if not args.language:
+                args.language = config.get('General', 'language', fallback='english')
         else:
             parser.error("When using config file as parameter, make sure the file path is correct.")
     else:
@@ -60,7 +77,8 @@ def main():
         (args.gpio_wheel_button_left, args.gpio_wheel_button_right),
         args.gpio_wheel_button_click,
         args.klipper_api_key,
-        args.klipper_socket
+        args.klipper_socket,
+        languages.get(args.language)
     )
 
 if __name__ == "__main__":
