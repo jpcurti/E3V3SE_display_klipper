@@ -2,12 +2,38 @@
 [![Documentation](https://github.com/jpcurti/E3V3SE_display_klipper/actions/workflows/documentation.yml/badge.svg)](https://jpcurti.github.io/E3V3SE_display_klipper/)
 # Interface for the Creality Ender 3 V3 SE display running Klipper 
 
-This project allows you to use the original Creality E3V3SE (Ender 3 V3 SE) display with Klipper when connected directly to the host (at the moment a Raspberry pi only) via UART and GPIOs. It fetches the information from Klipper via the moonraker API and is able to send basic commands back, so that you can re-use the printer original display for some basic functionality.
-
+This project allows you to use the original Creality E3V3SE (Ender 3 V3 SE) display with Klipper when connected directly to the host (at the moment a Raspberry pi only) via UART and GPIOs.It fetches the information from Klipper via the moonraker API and is able to send basic commands back, so that you can re-use the printer original display for some basic functionality.
+ 
 ![Demonstration image](https://github.com/jpcurti/E3V3SE_display_klipper/blob/main/docs/img/demo.gif?raw=true)
 
 Considering that the communication protocol between E3V3SE and the display is presently undisclosed, the repository includes a [comprehensive guide on reverse engineering the communication protocol of such printers](/docs/tjc3224_reverse_engineering.md). This resource is invaluable for extending this capability to other 3D printers. Users are encouraged to customize the project to suit their specific printer models.
 
+## Supported features
+
+The currently supported features are:
+
+| Feature                | Status             |
+|------------------------|--------------------|
+| Print file             | :white_check_mark: |
+| Tune print             | :white_check_mark: |
+| Pause/continue print   | :white_check_mark: |
+| Stop print             | :white_check_mark: |
+| Move Axis              | :white_check_mark: |
+| Home Axis              | :white_check_mark:
+| Set Z offset           | :white_check_mark: |
+| Disable step motors    | :white_check_mark: |
+| Preheat bed            | :white_check_mark: |
+| Cooldown               | :white_check_mark: |
+| Set nozzle temperature | :white_check_mark: |
+| Set bed temperature    | :white_check_mark: |
+| Set max speed          | :x:                |
+| Set max acceleration   | :x:                |
+| Set steps per-mm       | :x:                |
+| Leveling Menu          | :x:                |
+
+Features that are not available are shown as a pop-up:
+
+![Demonstration image](https://github.com/jpcurti/E3V3SE_display_klipper/blob/main/docs/img/disabled_features.gif?raw=true)
 
 ## Installation
 ### Via pip
