@@ -12,24 +12,24 @@ Considering that the communication protocol between E3V3SE and the display is pr
 
 The currently supported features are:
 
-| Feature                | Status             |
-|------------------------|--------------------|
-| Print file             | :white_check_mark: |
-| Tune print             | :white_check_mark: |
-| Pause/continue print   | :white_check_mark: |
-| Stop print             | :white_check_mark: |
-| Move Axis              | :white_check_mark: |
-| Home Axis              | :white_check_mark:
-| Set Z offset           | :white_check_mark: |
-| Disable step motors    | :white_check_mark: |
-| Preheat bed            | :white_check_mark: |
-| Cooldown               | :white_check_mark: |
-| Set nozzle temperature | :white_check_mark: |
-| Set bed temperature    | :white_check_mark: |
-| Set max speed          | :x:                |
-| Set max acceleration   | :x:                |
-| Set steps per-mm       | :x:                |
-| Leveling Menu          | :x:                |
+| Feature                | Status  |
+| ---------------------- | ------- |
+| Print file             | &check; |
+| Tune print             | &check; |
+| Pause/continue print   | &check; |
+| Stop print             | &check; |
+| Move Axis              | &check; |
+| Home Axis              | &check; |
+| Set Z offset           | &check; |
+| Disable step motors    | &check; |
+| Preheat bed            | &check; |
+| Cooldown               | &check; |
+| Set nozzle temperature | &check; |
+| Set bed temperature    | &check; |
+| Set max speed          | &cross; |
+| Set max acceleration   | &cross; |
+| Set steps per-mm       | &cross; |
+| Leveling Menu          | &cross; |
 
 Features that are not available are shown as a pop-up:
 
