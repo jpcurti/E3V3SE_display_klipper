@@ -2479,7 +2479,7 @@ class E3V3SE_DISPLAY:
     def Draw_Print_ProgressElapsed(self):
         elapsed = self.pd.duration()  # print timer
         self.lcd.draw_int_value(
-            False,
+            True,
             True,
             1,
             self.lcd.font_8x8,
@@ -2491,7 +2491,7 @@ class E3V3SE_DISPLAY:
             elapsed / 3600,
         )
         self.lcd.draw_string(
-            False,
+            True,
             self.lcd.font_8x8,
             self.color_white,
             self.color_background_black,
@@ -2500,7 +2500,7 @@ class E3V3SE_DISPLAY:
             ":",
         )
         self.lcd.draw_int_value(
-            False,
+            True,
             True,
             1,
             self.lcd.font_8x8,
@@ -2517,7 +2517,7 @@ class E3V3SE_DISPLAY:
         if not remain_time:
             return  # time remaining is None during warmup.
         self.lcd.draw_int_value(
-            False,
+            True,
             True,
             1,
             self.lcd.font_8x8,
@@ -2529,7 +2529,7 @@ class E3V3SE_DISPLAY:
             remain_time / 3600,
         )
         self.lcd.draw_string(
-            False,
+            True,
             self.lcd.font_8x8,
             self.color_white,
             self.color_background_black,
@@ -2538,7 +2538,7 @@ class E3V3SE_DISPLAY:
             ":",
         )
         self.lcd.draw_int_value(
-            False,
+            True,
             True,
             1,
             self.lcd.font_8x8,
