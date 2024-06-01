@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Interface for the Creality Ender 3 V3 SE display running Klipper &mdash; E3V3SE_display_klipper 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=2709fde1"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Reverse engineering the printer communication with display" href="tjc3224_reverse_engineering.html" />
+    <link rel="prev" title="Welcome to a’s documentation!" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            E3V3SE_display_klipper
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Interface for the Creality Ender 3 V3 SE display running Klipper</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#supported-features">Supported features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#via-pip">Via pip</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#by-cloning-the-project">By cloning the project</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#configuration-and-running">Configuration and Running</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#wiring">Wiring</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#using-a-rpi-as-a-host">Using a Rpi as a host</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#useful-links">Useful links</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tjc3224_reverse_engineering.html">Reverse engineering the printer communication with display</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tjc3224_reverse_engineering.html#differences-in-the-instruction-set">Differences in the instruction set:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference_index.html">Code documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">E3V3SE_display_klipper</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Interface for the Creality Ender 3 V3 SE display running Klipper</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/README.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p><a class="reference external" href="https://pypi.org/project/e3v3se-display-klipper"><img alt="PyPI version" src="https://badge.fury.io/py/e3v3se-display-klipper.svg" /></a>
+<a class="reference external" href="https://jpcurti.github.io/E3V3SE_display_klipper/"><img alt="Documentation" src="https://github.com/jpcurti/E3V3SE_display_klipper/actions/workflows/documentation.yml/badge.svg" /></a></p>
+<section id="interface-for-the-creality-ender-3-v3-se-display-running-klipper">
+<h1>Interface for the Creality Ender 3 V3 SE display running Klipper<a class="headerlink" href="#interface-for-the-creality-ender-3-v3-se-display-running-klipper" title="Link to this heading"></a></h1>
+<p><strong>Update: A new version of this project that uses the printer original display connector is released on <a class="reference external" href="https://github.com/jpcurti/ender3-v3-se-klipper-with-display">jpcurti/ender3-v3-se-klipper-with-display</a>. It incorporates this project into a custom klipper and works any host without any additional configuration or wiring. Check it out!</strong></p>
+<p>This project allows you to use the original Creality E3V3SE (Ender 3 V3 SE) display with Klipper when connected directly to the host (at the moment a Raspberry pi only) via UART and GPIOs.It fetches the information from Klipper via the moonraker API and is able to send basic commands back, so that you can re-use the printer original display for some basic functionality.</p>
+<p><img alt="Demonstration image" src="https://github.com/jpcurti/E3V3SE_display_klipper/blob/main/docs/img/demo.gif?raw=true" /></p>
+<p>Considering that the communication protocol between E3V3SE and the display is presently undisclosed, the repository includes a <a class="reference internal" href="#/docs/tjc3224_reverse_engineering.md"><span class="xref myst">comprehensive guide on reverse engineering the communication protocol of such printers</span></a>. This resource is invaluable for extending this capability to other 3D printers. Users are encouraged to customize the project to suit their specific printer models.</p>
+<section id="supported-features">
+<h2>Supported features<a class="headerlink" href="#supported-features" title="Link to this heading"></a></h2>
+<p>The currently supported features are:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Feature</p></th>
+<th class="head"><p>Status</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Print file</p></td>
+<td><p>✓</p></td>
+</tr>
+<tr class="row-odd"><td><p>Tune print</p></td>
+<td><p>✓</p></td>
+</tr>
+<tr class="row-even"><td><p>Pause/continue print</p></td>
+<td><p>✓</p></td>
+</tr>
+<tr class="row-odd"><td><p>Stop print</p></td>
+<td><p>✓</p></td>
+</tr>
+<tr class="row-even"><td><p>Move Axis</p></td>
+<td><p>✓</p></td>
+</tr>
+<tr class="row-odd"><td><p>Home Axis</p></td>
+<td><p>✓</p></td>
+</tr>
+<tr class="row-even"><td><p>Set Z offset</p></td>
+<td><p>✓</p></td>
+</tr>
+<tr class="row-odd"><td><p>Disable step motors</p></td>
+<td><p>✓</p></td>
+</tr>
+<tr class="row-even"><td><p>Preheat bed</p></td>
+<td><p>✓</p></td>
+</tr>
+<tr class="row-odd"><td><p>Cooldown</p></td>
+<td><p>✓</p></td>
+</tr>
+<tr class="row-even"><td><p>Set nozzle temperature</p></td>
+<td><p>✓</p></td>
+</tr>
+<tr class="row-odd"><td><p>Set bed temperature</p></td>
+<td><p>✓</p></td>
+</tr>
+<tr class="row-even"><td><p>Set max speed</p></td>
+<td><p>✗</p></td>
+</tr>
+<tr class="row-odd"><td><p>Set max acceleration</p></td>
+<td><p>✗</p></td>
+</tr>
+<tr class="row-even"><td><p>Set steps per-mm</p></td>
+<td><p>✗</p></td>
+</tr>
+<tr class="row-odd"><td><p>Leveling Menu</p></td>
+<td><p>✗</p></td>
+</tr>
+</tbody>
+</table>
+<p>Features that are not available are shown as a pop-up:</p>
+<p><img alt="Demonstration image" src="https://github.com/jpcurti/E3V3SE_display_klipper/blob/main/docs/img/disabled_features.gif?raw=true" /></p>
+</section>
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h2>
+<section id="via-pip">
+<h3>Via pip<a class="headerlink" href="#via-pip" title="Link to this heading"></a></h3>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>e3v3se-display-klipper
+e3v3se_display_klipper<span class="w"> </span>
+</pre></div>
+</div>
+</section>
+<section id="by-cloning-the-project">
+<h3>By cloning the project<a class="headerlink" href="#by-cloning-the-project" title="Link to this heading"></a></h3>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/jpcurti/E3V3SE_display_klipper.git
+<span class="nb">cd</span><span class="w"> </span>E3V3SE_display_klipper
+</pre></div>
+</div>
+</section>
+</section>
+<section id="configuration-and-running">
+<h2>Configuration and Running<a class="headerlink" href="#configuration-and-running" title="Link to this heading"></a></h2>
+<p>Parameters can be set as arguments or in a <code class="docutils literal notranslate"><span class="pre">config.ini</span></code> file in the project root. Run <code class="docutils literal notranslate"><span class="pre">python3</span> <span class="pre">run.py</span> <span class="pre">--help</span></code> (for project cloning) or <code class="docutils literal notranslate"><span class="pre">e3v3se_display</span> <span class="pre">--help</span></code> for a complete list of parameters.</p>
+<ul class="simple">
+<li><p>Example of configuration file:  Check the file <code class="docutils literal notranslate"><span class="pre">config-example.ini</span></code></p></li>
+<li><p>Example when running as arguments:</p></li>
+</ul>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>run.py<span class="w"> </span>--com_port<span class="w"> </span><span class="s1">&#39;/dev/ttyAMA0&#39;</span><span class="w"> </span>--baud<span class="w"> </span><span class="m">115200</span><span class="w"> </span>--gpio_wheel_button_left<span class="w"> </span><span class="m">26</span><span class="w"> </span>--gpio_wheel_button_right<span class="w"> </span><span class="m">19</span><span class="w"> </span>--gpio_wheel_button_click<span class="w"> </span><span class="m">13</span><span class="w"> </span>--klipper_api_key<span class="w"> </span><span class="s1">&#39;yourapikey&#39;</span><span class="w"> </span>--klipper_socket<span class="w"> </span><span class="s1">&#39;/home/youruser/printer_data/comms/klippy.sock&#39;</span><span class="w"> </span>
+
+or<span class="w"> </span>
+
+e3v3se_display_klipper<span class="w"> </span>--com_port<span class="w"> </span><span class="s1">&#39;/dev/ttyAMA0&#39;</span><span class="w"> </span>--baud<span class="w"> </span><span class="m">115200</span><span class="w"> </span>--gpio_wheel_button_left<span class="w"> </span><span class="m">26</span><span class="w"> </span>--gpio_wheel_button_right<span class="w"> </span><span class="m">19</span><span class="w"> </span>--gpio_wheel_button_click<span class="w"> </span><span class="m">13</span><span class="w"> </span>--klipper_api_key<span class="w"> </span><span class="s1">&#39;yourapikey&#39;</span><span class="w"> </span>--klipper_socket<span class="w"> </span><span class="s1">&#39;/home/youruser/printer_data/comms/klippy.sock&#39;</span><span class="w"> </span>
+</pre></div>
+</div>
+</section>
+<section id="wiring">
+<h2>Wiring<a class="headerlink" href="#wiring" title="Link to this heading"></a></h2>
+<section id="using-a-rpi-as-a-host">
+<h3>Using a Rpi as a host<a class="headerlink" href="#using-a-rpi-as-a-host" title="Link to this heading"></a></h3>
+<p>If you want to follow the same wiring as the default configuration, make sure to <a class="reference external" href="https://www.raspberrypi.com/documentation/computers/configuration.html#configuring-uarts">configure the primary UART on the raspberry!</a>.</p>
+<p>Then, wire the raspberry pi and display according to the image below:
+<img alt="Wiring diagram between display and raspberry pi" src="https://github.com/jpcurti/E3V3SE_display_klipper/blob/main/docs/img/wiring.png?raw=true" /></p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Display</p></th>
+<th class="head"><p>RPi</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>VCC (5V)</p></td>
+<td><p>2</p></td>
+</tr>
+<tr class="row-odd"><td><p>GND</p></td>
+<td><p>6</p></td>
+</tr>
+<tr class="row-even"><td><p>TX</p></td>
+<td><p>10 (RX)</p></td>
+</tr>
+<tr class="row-odd"><td><p>RX</p></td>
+<td><p>8 (TX)</p></td>
+</tr>
+<tr class="row-even"><td><p>A</p></td>
+<td><p>19</p></td>
+</tr>
+<tr class="row-odd"><td><p>B</p></td>
+<td><p>26</p></td>
+</tr>
+<tr class="row-even"><td><p>ENTER</p></td>
+<td><p>13</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Important - Credits</strong>:</p>
+<ul class="simple">
+<li><p>This repository is heavily based on the <a class="reference external" href="https://github.com/odwdinc/DWIN_T5UIC1_LCD">DWIN_T5UIC1_LCD</a> repository for the E3V2 display and makes use of most of the available classes and methods implemented there, with the necessary modifications for the E3V3SE display. All credits goes to the <a class="reference external" href="https://github.com/odwdinc">author of the DWIN_T5UIC1_LCD project</a> for making the version which this repository is based on.</p></li>
+<li><p>This project is based on the <strong>E3V3SE display firmware 1.0.6</strong>. Any changes in the firmware version, such as a new version from Creality, can change the assets locations within the display memory and a new mapping would be necessary. A list of available firmware can be found <a class="reference external" href="https://www.creality.com/pages/download-ender-3-v3-se">on Creality website</a> and a detailed instruction on how to update your display is available on <a class="reference external" href="https://www.youtube.com/watch?v=8oRuCusCyUM&amp;amp;ab_channel=CrealityAfter-sale">youtube</a>.</p></li>
+</ul>
+</section>
+</section>
+<section id="useful-links">
+<h2>Useful links<a class="headerlink" href="#useful-links" title="Link to this heading"></a></h2>
+<p>https://www.klipper3d.org</p>
+<p>https://octoprint.org/</p>
+<p>https://github.com/arksine/moonraker</p>
+<p>https://github.com/odwdinc/DWIN_T5UIC1_LCD</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to a’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="tjc3224_reverse_engineering.html" class="btn btn-neutral float-right" title="Reverse engineering the printer communication with display" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Joao Curti.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
